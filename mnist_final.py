@@ -1,6 +1,5 @@
 import csv
 
-import matplotlib.pyplot as plt
 import numpy as np
 import sklearn as sk
 import graphlearning as gl
@@ -303,9 +302,6 @@ def bellman_ford_voronoi_initialization(N, fidelity, y, W):
 
     done=False
     while( not done):
-        plt.scatter(x[:,0], x[:,1],c=labels)
-        plt.show()
-        print(np.sum(active))
         done=1
         for i in range(N):
             if(active[i]):
