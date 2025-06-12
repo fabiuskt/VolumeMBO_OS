@@ -1,6 +1,7 @@
 import numpy as np
 
 import volumembo
+import _volumembo
 
 
 def test_fit_median():
@@ -34,10 +35,14 @@ def test_fit_median():
     fitter = volumembo.median_fitter.VolumeMedianFitter(
         diffused_labels, lower_limit, upper_limit
     )
-    clustering, median_history = fitter.run(return_history=True)
+    clustering, _ = fitter.run(return_history=True)
+
+    # Get labels and median from C++ fitter
+    median_cpp = _volumembo.fit_median_cpp(diffused_labels, lower_limit, upper_limit)
+    clustering_cpp = volumembo.utils.assign_clusters(diffused_labels, median_cpp)
 
     # Get labels and median from legacy fitter
-    median_legacy, clustering_legacy, sizes_legacy = volumembo.legacy.fit_median(
+    _, clustering_legacy, _ = volumembo.legacy.fit_median(
         number_of_labels,
         lower_limit,
         upper_limit,
@@ -45,5 +50,5 @@ def test_fit_median():
         np.full(number_of_labels, 1 / number_of_labels),
     )
 
-    # assert np.allclose(median_history[-1], median_legacy, rtol=2.e-2)
     assert np.all(clustering == clustering_legacy)
+    assert np.all(clustering == clustering_cpp)

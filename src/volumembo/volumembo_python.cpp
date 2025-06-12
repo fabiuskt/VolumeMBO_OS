@@ -35,7 +35,7 @@ PYBIND11_MODULE(_volumembo, m)
           u_vec[i][j] = data[i * M + j];
 
       volumembo::VolumeMedianFitter fitter(u_vec, lower_limit, upper_limit);
-      return fitter.fit(); // returns std::vector<double>
+      return fitter.fit();
     },
     py::arg("u"),
     py::arg("lower_limit"),

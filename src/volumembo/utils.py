@@ -9,7 +9,7 @@ R = TypeVar("R")  # Return type of the function
 P = ParamSpec("P")  # Parameter types of the function
 
 
-def timed(func: Callable[P, R]) -> Callable[P, R]:
+def timed(func: Callable[P, R]) -> Callable[P, tuple[R, float]]:
     """
     Decorator that prints the execution time of the decorated function.
 
@@ -29,13 +29,13 @@ def timed(func: Callable[P, R]) -> Callable[P, R]:
     """
 
     @wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> tuple[R, float]:
         print(f"Starting: {func.__name__}")
         start = time.perf_counter()
         result = func(*args, **kwargs)
         elapsed = time.perf_counter() - start
-        print(f"Finished: {func.__name__} in {elapsed:.4f} s")
-        return result
+        print(f"Finished: {func.__name__} in {elapsed:.4f} s\n")
+        return result, elapsed
 
     return wrapper
 

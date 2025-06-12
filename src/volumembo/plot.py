@@ -108,7 +108,7 @@ class SimplexPlotter:
 
                 # Optional label
                 if show_labels:
-                    label_pos = tick_start + 1.4 * tick_length * directions[i]
+                    label_pos = tick_start + 1.75 * tick_length * directions[i]
                     if i == 0 or i == 1:
                         label = label_format.format(1 - t)
                     else:

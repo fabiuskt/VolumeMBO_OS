@@ -28,6 +28,7 @@ This installs the `volumembo` package and exposes the CMake build directory as `
 ### Demo
 
 [![Example 1](img/volumeMBO_clustering_0.png)]()
+[![Example 2](img/volumeMBO_clustering_1.png)]()
 
 ## 📚 Literature
 Krämer, F., and Laux, T., "An efficient volume-preserving MBO scheme for data clustering and classification." arXiv:2412.17694 (2024). DOI: [10.48550/arXiv.2412.17694](https://doi.org/10.48550/arXiv.2412.17694)

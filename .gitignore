@@ -18,6 +18,7 @@ jupyter/results/
 *.png
 *.jpg
 *.jpeg
+*.pkl
 
 # But keep PNG files in img/
 !img/*.png
