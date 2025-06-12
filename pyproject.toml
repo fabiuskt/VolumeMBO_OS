@@ -1,0 +1,28 @@
+# This section describes the requirements of the build/installation
+# process itself.
+[build-system]
+requires = [
+    "pybind11",
+    "scikit-build-core",
+]
+build-backend = "scikit_build_core.build"
+
+# This section provides general project metadata that is used across
+# a variety of build tools. Notably, the version specified here is the
+# single source of truth for volumembo's version
+[project]
+name = "volumembo"
+version = "0.1.0"
+description = "Efficient Volume-Preserving MBO Scheme for Data Clustering"
+license = "Apache-2.0"
+license-files = ["LICENSE.md"]
+readme = "README.md"
+authors = [{ name = "Fabius Krämer", email = "f.kraemer@math.uni-heidelberg.de" }]
+requires-python = ">=3.10"
+dependencies = ["annoy", "graphlearning", "matplotlib", "numpy", "scipy", "scikit-learn"]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.scikit-build.cmake]
+minimum-version = "3.30"

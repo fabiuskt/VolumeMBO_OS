@@ -1,0 +1,4 @@
+cmake
+pre-commit
+pytest
+pytest-cov
