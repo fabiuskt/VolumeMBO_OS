@@ -174,14 +174,14 @@ private:
   void remove(PID pid, Label from_label);
 
   /**
-   * @brief Select a cluster to modify based on the current cluster sizes and
+   * @brief Select a label to modify based on the current cluster sizes and
    * limits
    *
    * @param offset Offset to adjust the selection process
    *
    * @return The label of the selected cluster
    */
-  Label select_cluster(int offset) const;
+  Label select_label(int offset) const;
 
   /**
    * @brief Check if the volumes of all clusters match their limits

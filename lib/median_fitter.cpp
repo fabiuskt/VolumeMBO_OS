@@ -60,7 +60,7 @@ VolumeMedianFitter::fit()
     if (iteration > max_iter)
       break;
 
-    Label cluster = select_cluster(offset);
+    Label cluster = select_label(offset);
     offset = (cluster + 1) % M;
 
     std::vector<std::tuple<PID, Label, Label>> candidates;
@@ -250,7 +250,7 @@ VolumeMedianFitter::remove(PID pid, Label from_label)
 }
 
 Label
-VolumeMedianFitter::select_cluster(int offset) const
+VolumeMedianFitter::select_label(int offset) const
 {
   std::vector<unsigned int> violations(M);
 

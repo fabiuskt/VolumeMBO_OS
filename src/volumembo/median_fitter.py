@@ -51,7 +51,7 @@ class VolumeMedianFitter:
             if iteration > max_iter:
                 break
 
-            cluster = self._select_cluster(offset)
+            cluster = self._select_label(offset)
             offset = (cluster + 1) % self.M
 
             candidates = []
@@ -169,10 +169,10 @@ class VolumeMedianFitter:
                 pid
             )  # Delete directly from heap
 
-    def _select_cluster(self, offset: int) -> int:
-        """Select the cluster to adjust next.
+    def _select_label(self, offset: int) -> int:
+        """Select the label to adjust next.
 
-        Prefers clusters with large violations but biases toward round-robin cycling via offset. Only when at least two labels have maximum violation, the cycling is used. Otherwise the label with maximum violation is chosen.
+        Prefers labels with large violations but biases toward round-robin cycling via offset. Only when at least two labels have maximum violation, the cycling is used. Otherwise the label with maximum violation is chosen.
         """
         # Violation magnitude: how far outside the allowed bounds (0 if inside)
         under = np.clip(self.lower_limit - self.cluster_sizes, 0, None)
