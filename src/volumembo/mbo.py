@@ -276,7 +276,9 @@ class MBO:
                 break
 
             # Diffuse the current clustering
-            u = self.diffuse(chi)
+            u = np.require(
+                self.diffuse(chi), dtype=np.float64, requirements=["C_CONTIGUOUS"]
+            )
 
             # Add temperature noise if configured
             if self.temperature is not None:

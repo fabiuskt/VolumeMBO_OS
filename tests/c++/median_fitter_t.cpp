@@ -3,8 +3,10 @@
 #include <catch2/catch_approx.hpp>
 
 #include "volumembo/median_fitter.hpp"
+#include "volumembo/span2d.hpp"
 
 #include <numeric>
+#include <vector>
 
 TEST_CASE("Fit median 2D")
 {
@@ -12,17 +14,17 @@ TEST_CASE("Fit median 2D")
   constexpr unsigned int M = 2; // number of clusters
 
   // Lower and upper limits
-  std::vector<unsigned int> lower_limit = { 3, 3 };
-  std::vector<unsigned int> upper_limit = { 3, 3 };
+  const std::vector<unsigned int> lower_limit = { 3, 3 };
+  const std::vector<unsigned int> upper_limit = { 3, 3 };
 
   SECTION("2D Grow cluster 0")
   {
     // Example u matrix: 6 points in 2D space (flattened row-major)
-    std::vector<std::vector<double>> u = { { 0.28, 0.72 }, { 0.25, 0.75 },
-                                           { 0.2, 0.8 },   { 0.15, 0.85 },
-                                           { 0.1, 0.9 },   { 0.05, 0.95 } };
+    const std::vector<double> u = { 0.28, 0.72, 0.25, 0.75, 0.2,  0.8,
+                                    0.15, 0.85, 0.1,  0.9,  0.05, 0.95 };
 
-    volumembo::VolumeMedianFitter fitter(u, lower_limit, upper_limit);
+    volumembo::Span2D<const double> u_span(u, N, M);
+    volumembo::VolumeMedianFitter fitter(u_span, lower_limit, upper_limit);
 
     std::vector<double> result = fitter.fit();
 
@@ -41,11 +43,11 @@ TEST_CASE("Fit median 2D")
   {
     // Example u matrix: 6 points in 2D space (flattened row-major)
 
-    std::vector<std::vector<double>> u = { { 0.72, 0.28 }, { 0.75, 0.25 },
-                                           { 0.8, 0.2 },   { 0.85, 0.15 },
-                                           { 0.9, 0.1 },   { 0.95, 0.05 } };
+    const std::vector<double> u = { 0.72, 0.28, 0.75, 0.25, 0.8,  0.2,
+                                    0.85, 0.15, 0.9,  0.1,  0.95, 0.05 };
 
-    volumembo::VolumeMedianFitter fitter(u, lower_limit, upper_limit);
+    volumembo::Span2D<const double> u_span(u, N, M);
+    volumembo::VolumeMedianFitter fitter(u_span, lower_limit, upper_limit);
 
     std::vector<double> result = fitter.fit();
 
@@ -67,19 +69,19 @@ TEST_CASE("Fit median 3D")
   constexpr unsigned int M = 3; // number of clusters
 
   // Lower and upper limits
-  std::vector<unsigned int> lower_limit = { 3, 3, 3 };
-  std::vector<unsigned int> upper_limit = { 3, 3, 3 };
+  const std::vector<unsigned int> lower_limit = { 3, 3, 3 };
+  const std::vector<unsigned int> upper_limit = { 3, 3, 3 };
 
   SECTION("3D Grow cluster 0")
   {
     // Example u matrix: 6 points in 3D space (flattened row-major)
-    std::vector<std::vector<double>> u = { { 0.8, 0.1, 0.1 }, { 0.7, 0.2, 0.1 },
-                                           { 0.6, 0.3, 0.1 }, { 0.1, 0.7, 0.2 },
-                                           { 0.2, 0.6, 0.2 }, { 0.3, 0.1, 0.6 },
-                                           { 0.4, 0.1, 0.5 }, { 0.1, 0.2, 0.7 },
-                                           { 0.1, 0.1, 0.8 } };
+    const std::vector<double> u = {
+      0.8, 0.1, 0.1, 0.7, 0.2, 0.1, 0.6, 0.3, 0.1, 0.1, 0.7, 0.2, 0.2, 0.6,
+      0.2, 0.3, 0.1, 0.6, 0.4, 0.1, 0.5, 0.1, 0.2, 0.7, 0.1, 0.1, 0.8
+    };
 
-    volumembo::VolumeMedianFitter fitter(u, lower_limit, upper_limit);
+    volumembo::Span2D<const double> u_span(u, N, M);
+    volumembo::VolumeMedianFitter fitter(u_span, lower_limit, upper_limit);
 
     std::vector<double> result = fitter.fit();
 

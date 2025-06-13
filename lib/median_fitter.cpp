@@ -1,6 +1,7 @@
 #include "volumembo/median_fitter.hpp"
 
 #include "volumembo/priority_queue.hpp"
+#include "volumembo/span2d.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -27,14 +28,14 @@ FlipTimeComparator::operator()(int a, int b) const
 }
 
 VolumeMedianFitter::VolumeMedianFitter(
-  const std::vector<std::vector<double>>& u_,
+  Span2D<const double> u_,
   const std::vector<unsigned int>& lower_limit_,
   const std::vector<unsigned int>& upper_limit_)
   : u(u_)
   , lower_limit(lower_limit_)
   , upper_limit(upper_limit_)
-  , N(static_cast<unsigned int>(u.size()))
-  , M(static_cast<unsigned int>(u.empty() ? 0 : u[0].size()))
+  , N(static_cast<unsigned int>(u.rows()))
+  , M(static_cast<unsigned int>(u.cols()))
   , median(M, 1.0 / static_cast<double>(M))
   , labels(N)
   , cluster_sizes(M, 0)
@@ -162,7 +163,7 @@ VolumeMedianFitter::compute_u_minus_m(size_t index) const
 {
   std::vector<double> u_minus_m(M);
   for (unsigned int j = 0; j < M; ++j) {
-    u_minus_m[j] = u[index][j] - median[j];
+    u_minus_m[j] = u(index, j) - median[j];
   }
   return u_minus_m;
 }

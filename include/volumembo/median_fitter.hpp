@@ -1,6 +1,7 @@
 #pragma once
 
 #include "volumembo/priority_queue.hpp"
+#include "volumembo/span2d.hpp"
 
 #include <map>
 #include <optional>
@@ -50,7 +51,7 @@ public:
    * @param lower_limit_ A vector of lower limits for each cluster (size M)
    * @param upper_limit_ A vector of upper limits for each cluster (size M)
    */
-  VolumeMedianFitter(const std::vector<std::vector<double>>& u_,
+  VolumeMedianFitter(Span2D<const double> u_,
                      const std::vector<unsigned int>& lower_limit_,
                      const std::vector<unsigned int>& upper_limit_);
 
@@ -64,7 +65,7 @@ public:
   friend struct FlipTimeComparator;
 
 private:
-  const std::vector<std::vector<double>>& u;    // shape N × M
+  Span2D<const double> u;                       // shape N × M
   const std::vector<unsigned int>& lower_limit; // size M
   const std::vector<unsigned int>& upper_limit; // size M
 

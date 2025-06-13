@@ -4,6 +4,7 @@
 
 #include "volumembo/median_fitter.hpp"
 #include "volumembo/pybind11_numpy_interop.hpp"
+#include "volumembo/span2d.hpp"
 
 namespace py = pybind11;
 
@@ -23,24 +24,22 @@ PYBIND11_MODULE(_volumembo, m)
 
       size_t N = u_np.shape(0);
       size_t M = u_np.shape(1);
+
       if (lower_limit.size() != M || upper_limit.size() != M)
         throw std::invalid_argument(
           "Volume limits must match number of clusters");
 
-      // Convert NumPy array to std::vector<std::vector<double>>
-      const double* data = u_np.data();
-      std::vector<std::vector<double>> u_vec(N, std::vector<double>(M));
-      for (size_t i = 0; i < N; ++i)
-        for (size_t j = 0; j < M; ++j)
-          u_vec[i][j] = data[i * M + j];
+      // Wrap in custom Span2D type
+      Span2D<const double> u_view(u_np.data(), N, M);
 
-      volumembo::VolumeMedianFitter fitter(u_vec, lower_limit, upper_limit);
+      // Run the fitter
+      VolumeMedianFitter fitter(u_view, lower_limit, upper_limit);
       return fitter.fit();
     },
     py::arg("u"),
     py::arg("lower_limit"),
     py::arg("upper_limit"),
-    "Fit median using the C++ priority queue implementation");
+    "Fit median using the C++ priority queue implementation (zero-copy)");
 }
 
 } // namespace volumembo
