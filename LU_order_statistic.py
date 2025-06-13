@@ -3,7 +3,7 @@ import numpy as np
 import collections as cl
 
 from array_inherit import c_arr
-import test as t
+import priority_queue as t
 
 
 
