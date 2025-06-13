@@ -69,24 +69,26 @@ class MBO:
             - "fit_median_legacy": legacy implementation of fit median thresholding
             - "fit_median": fit median thresholding
         """
-        self.labels: np.ndarray | None = None
-        self.data: np.ndarray | None = None
-        self.weight_matrix: sp.sparse.spmatrix | None = None
-        self.number_of_neighbors: int | None = None
-        self.volume: np.ndarray | None = None
-        self.lower_limit: np.ndarray | None = None
-        self.upper_limit: np.ndarray | None = None
-        self.diffusion_method: str | None = None
-        self.number_of_points: int | None = None
-        self.number_of_labels: int | None = None
-        self.eigenvectors: np.ndarray | None = None
-        self.eigenvalues: np.ndarray | None = None
-        self.W2: sp.sparse.spmatrix | None = None
         self.A_3: sp.sparse.spmatrix | None = None
-        self.W_W2: sp.sparse.spmatrix | None = None
         self.A_minus_eig: sp.sparse.spmatrix | None = None
-        self.initial_cluster: np.ndarray | None = None
+        self.data: np.ndarray | None = None
+        self.diffusion_method: str | None = None
+        self.eigenvalues: np.ndarray | None = None
+        self.eigenvectors: np.ndarray | None = None
         self.fidelity_set: np.ndarray | None = None
+        self.initial_cluster: np.ndarray | None = None
+        self.labels: np.ndarray | None = None
+        self.lower_limit: np.ndarray | None = None
+        self.number_of_known_labels: int | None = None
+        self.number_of_labels: int | None = None
+        self.number_of_neighbors: int | None = None
+        self.number_of_points: int | None = None
+        self.temperature: float | None = None
+        self.upper_limit: np.ndarray | None = None
+        self.volume: np.ndarray | None = None
+        self.W2: sp.sparse.spmatrix | None = None
+        self.W_W2: sp.sparse.spmatrix | None = None
+        self.weight_matrix: sp.sparse.spmatrix | None = None
 
         if labels is None:
             raise ValueError("Labels must be provided.")
@@ -115,7 +117,7 @@ class MBO:
 
         DEFAULTS = {
             "diffusion_time": 1.0,
-            "temperature": 0.0,
+            "temperature": None,
             "lower_limit": None,
             "upper_limit": None,
             "number_of_known_labels": 5,
@@ -207,7 +209,8 @@ class MBO:
         if self.number_of_neighbors is not None:
             print(f"Number of neighbors: {self.number_of_neighbors}")
         print(f"Diffusion time: {self.diffusion_time}")
-        print(f"Temperature: {self.temperature}")
+        if self.temperature is not None:
+            print(f"Temperature: {self.temperature}")
         print(f"Number of known labels per class: {self.number_of_known_labels}")
 
         if self.data is not None:
@@ -269,15 +272,15 @@ class MBO:
 
         # Run the MBO iteration loop
         for count in range(max_iterations):
-            if relative_energy_change < tolerance:
+            if not self.temperature and relative_energy_change < tolerance:
                 break
 
-            # Diffuse the current clustering (Chi)
+            # Diffuse the current clustering
             u = self.diffuse(chi)
 
             # Add temperature noise if configured
-            # if self.temperature > 0:
-            #    u += np.random.normal(0, self.temperature, size=u.shape)
+            if self.temperature is not None:
+                u += np.random.normal(0, self.temperature, size=u.shape)
 
             # Calculate the energy
             new_energy = np.sum(u * (1 - chi))
