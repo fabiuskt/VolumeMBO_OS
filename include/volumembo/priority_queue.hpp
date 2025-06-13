@@ -138,17 +138,23 @@ private:
    */
   void sift_up(size_t i)
   {
-    while (i > 0) {
-      size_t parent = (i - 1) / 2;
-      if (compare(heap[parent], heap[i])) {
-        std::swap(heap[i], heap[parent]);
-        index_in_heap[heap[i]] = i;
-        index_in_heap[heap[parent]] = parent;
-        i = parent;
+    PIDType item = heap[i];
+    size_t current = i;
+
+    // Find the correct position for item
+    while (current > 0) {
+      size_t parent = (current - 1) / 2;
+      if (compare(heap[parent], item)) {
+        heap[current] = heap[parent];
+        index_in_heap[heap[current]] = current;
+        current = parent;
       } else {
         break;
       }
     }
+
+    heap[current] = item;
+    index_in_heap[item] = current;
   }
 
   /**
@@ -162,26 +168,33 @@ private:
   {
     size_t n = heap.size();
     size_t start = i;
+    PIDType item = heap[i];
 
     while (true) {
       size_t left = 2 * i + 1;
       size_t right = 2 * i + 2;
-      size_t largest = i;
 
-      if (left < n && compare(heap[largest], heap[left]))
-        largest = left;
-      if (right < n && compare(heap[largest], heap[right]))
-        largest = right;
+      // Choose the better child according to comparator
+      size_t best = i;
 
-      if (largest != i) {
-        std::swap(heap[i], heap[largest]);
+      if (left < n && compare(item, heap[left])) {
+        best = left;
+      }
+      if (right < n && compare(best == i ? item : heap[best], heap[right])) {
+        best = right;
+      }
+
+      if (best != i) {
+        heap[i] = heap[best];
         index_in_heap[heap[i]] = i;
-        index_in_heap[heap[largest]] = largest;
-        i = largest;
+        i = best;
       } else {
         break;
       }
     }
+
+    heap[i] = item;
+    index_in_heap[item] = i;
 
     return i != start;
   }
