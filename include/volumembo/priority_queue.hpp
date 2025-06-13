@@ -9,7 +9,19 @@
 
 namespace volumembo {
 
-template<typename PIDType, typename Comparator = std::greater<PIDType>>
+/**
+ * @brief A modifiable priority queue that allows removal of arbitrary elements.
+ *
+ * This priority queue supports standard heap operations like push and pop,
+ * while also allowing efficient removal of arbitrary elements by ID.
+ * Internally, it maintains an index map to track the position of each element
+ * in the heap array for fast updates.
+ *
+ * @tparam PIDType The type of the point or element IDs.
+ * @tparam Comparator The comparator used to define heap ordering
+ *         (default: std::greater<PIDType> for min-heap behavior).
+ */
+template<typename PIDType, typename Comparator = std::greater<>>
 class ModifiablePriorityQueue
 {
 public:
@@ -29,19 +41,43 @@ public:
   //! Check if the queue is empty
   bool empty() const { return heap.empty(); }
 
-  //! Peek at the top element without removing it
+  /**
+   * @brief Peek at the top element of the queue, without removing it
+   *
+   * @return The ID of the top element
+   */
   PIDType peek() const
   {
     assert(!heap.empty());
     return heap[0];
   }
 
-  //! Pop the top element and remove it from the queue
+  /**
+   * @brief Pop the top element from the queue, remove it
+   *
+   * @return The ID of the popped element
+   */
   PIDType pop()
   {
     assert(!heap.empty());
+
     PIDType top = heap[0];
-    remove(top); // find another way to do this to circumvent search in indices!
+    PIDType last_id = heap.back();
+
+    index_in_heap.erase(top);
+
+    if (heap.size() == 1) {
+      heap.pop_back();
+      return top;
+    }
+
+    // Move last element to top and restore heap
+    heap[0] = last_id;
+    index_in_heap[last_id] = 0;
+    heap.pop_back();
+
+    sift_down(0);
+
     return top;
   }
 
