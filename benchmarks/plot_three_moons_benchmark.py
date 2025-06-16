@@ -1,4 +1,5 @@
 import argparse
+import datetime
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from matplotlib.ticker import ScalarFormatter
@@ -6,26 +7,17 @@ import pickle
 import numpy as np
 
 
-def fit_line(x, y):
-    """
-    Fits a line to log-log data (y = a * x^b).
-    Returns slope (b), intercept (log(a)), and r-value.
-    """
-    log_x = np.log10(x)
-    log_y = np.log10(y)
-    slope, intercept, r_value, _, _ = linregress(log_x, log_y)
-    return slope, intercept, r_value
-
-
 def plot_results(input_data):
-    filename = f"./benchmark_three_moons.png"
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"./benchmark_three_moons_{timestamp}.png"
 
+    colors = np.array(["darkorange", "forestgreen", "dodgerblue", "crimson", "cyan"])
     markersize = 3.0
     lw = 0.75
 
     #############################################################################################
-    fig = plt.figure(figsize=(7.22433, 4.0))
-    gs = gridspec.GridSpec(nrows=1, ncols=2, wspace=0.25)
+    fig = plt.figure(figsize=(7.22433, 6.0))
+    gs = gridspec.GridSpec(nrows=2, ncols=2, wspace=0.25, hspace=0.25)
     #############################################################################################
     ax0 = fig.add_subplot(gs[0, 0])
     ax0.tick_params(
@@ -33,15 +25,19 @@ def plot_results(input_data):
     )
     ax0.minorticks_on()
 
-    for method, data in input_data.items():
-        x, y = zip(*data)
+    for i, ((threshold_method, diffusion_method), entries) in enumerate(
+        input_data.items()
+    ):
+        label = f"{threshold_method} + {diffusion_method}"
+        N, total, _, _, _ = zip(*entries)
         ax0.plot(
-            x,
-            y,
+            N,
+            total,
             marker="o",
             markersize=markersize,
             lw=lw,
-            label=method,
+            label=label,
+            color=colors[i],
             clip_on=True,
             zorder=10,
         )
@@ -64,16 +60,20 @@ def plot_results(input_data):
     )
     ax1.minorticks_on()
 
-    for method, data in input_data.items():
-        x, y = zip(*data)
-        x_scaled = x * np.log(x)
+    for i, ((threshold_method, diffusion_method), entries) in enumerate(
+        input_data.items()
+    ):
+        label = f"{threshold_method} + {diffusion_method}"
+        N, total, _, _, _ = zip(*entries)
+        N_scaled = N * np.log(N)
         ax1.plot(
-            x_scaled,
-            y,
+            N_scaled,
+            total,
             marker="o",
             markersize=markersize,
             lw=lw,
-            label=method,
+            label=label,
+            color=colors[i],
             clip_on=True,
             zorder=10,
         )
@@ -89,6 +89,63 @@ def plot_results(input_data):
 
     ax1.set_xlabel("Number of samples N log(N)")
     ax1.set_ylabel("Elapsed time t /s")
+    #############################################################################################
+    ax2 = fig.add_subplot(gs[1, 0])
+    ax2.tick_params(
+        direction="in", which="both", bottom=True, top=True, left=True, right=True
+    )
+    ax2.minorticks_on()
+
+    for i, ((threshold_method, diffusion_method), entries) in enumerate(
+        input_data.items()
+    ):
+        label = f"{threshold_method} + {diffusion_method}"
+        N, total, diffusion, threshold, build_matrices = zip(*entries)
+        ax2.plot(
+            N,
+            diffusion,
+            marker="o",
+            markersize=markersize,
+            lw=lw,
+            label=label,
+            color=colors[i],
+            clip_on=True,
+            zorder=10,
+        )
+        ax2.plot(
+            N,
+            threshold,
+            marker="x",
+            markersize=markersize,
+            lw=lw,
+            label=label,
+            color=colors[i],
+            clip_on=True,
+            zorder=10,
+        )
+        ax2.plot(
+            N,
+            build_matrices,
+            marker="P",
+            markersize=markersize,
+            lw=lw,
+            label=label,
+            color="k",
+            clip_on=True,
+            zorder=10,
+        )
+
+    ax2.set_xscale("log")
+    ax2.set_yscale("log")
+
+    ax2.set_xlim(left=9.0e1, right=2.5e5)
+    ax2.set_ylim(bottom=1.0e-6, top=1.0e1)
+
+    # ax2.grid(True)
+    # ax2.legend()
+
+    ax2.set_xlabel("Number of samples N log(N)")
+    ax2.set_ylabel("Elapsed time t /s")
     #############################################################################################
     plt.subplots_adjust(left=0.1, right=0.95, top=0.95, bottom=0.1)
     fig.savefig(filename, transparent=False, dpi=600)

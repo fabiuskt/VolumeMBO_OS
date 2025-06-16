@@ -1,24 +1,16 @@
-class CustomHeap:
-    def __init__(self, comparator):
-        self.heap = []
-        self.comparator = comparator
-        self.index_map = {}  # maps pid -> index in heap
+from typing import Callable, Iterator
 
-    def heappeek(self):
+
+class CustomHeap:
+    def __init__(self, comparator: Callable[[int, int], int]) -> None:
+        self.heap: list[int] = []
+        self.comparator: Callable[[int, int], int] = comparator
+        self.index_map: dict[int, int] = {}  # maps pid -> index in heap
+
+    def heappeek(self) -> int | None:
         return self.heap[0] if self.heap else None
 
-    def heappop(self):
-        pid = self.heap[0]
-        lastelt = self.heap.pop()
-        del self.index_map[pid]
-        if self.heap:
-            returnitem = self.heap[0]
-            self.heap[0] = lastelt
-            self._siftup(0)
-            return returnitem
-        return lastelt
-
-    def heappop(self):
+    def heappop(self) -> int:
         lastelt = self.heap.pop()
         if not self.heap:
             del self.index_map[lastelt]
@@ -30,13 +22,13 @@ class CustomHeap:
         self._siftup(0)
         return returnitem
 
-    def heappush(self, pid):
+    def heappush(self, pid: int) -> None:
         self.heap.append(pid)
         pos = len(self.heap) - 1
         self.index_map[pid] = pos
         self._siftdown(0, pos)
 
-    def heapremove(self, pid):
+    def heapremove(self, pid: int) -> None:
         pos = self.index_map.pop(pid, None)
         if pos is None:
             return  # pid not in heap
@@ -49,16 +41,16 @@ class CustomHeap:
         self._siftup(pos)
         self._siftdown(0, pos)
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return bool(self.heap)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[int]:
         return iter(self.heap)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.heap)
 
-    def _siftdown(self, startpos, pos):
+    def _siftdown(self, startpos: int, pos: int) -> None:
         newitem = self.heap[pos]
         # Follow the path to the root, moving parents down until finding a place newitem fits
         while pos > startpos:
@@ -73,7 +65,7 @@ class CustomHeap:
         self.heap[pos] = newitem
         self.index_map[newitem] = pos
 
-    def _siftup(self, pos):
+    def _siftup(self, pos: int) -> None:
         endpos = len(self.heap)
         startpos = pos
         newitem = self.heap[pos]

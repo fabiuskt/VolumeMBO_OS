@@ -47,7 +47,7 @@ public:
   /**
    * @brief Constructor for VolumeMedianFitter
    *
-   * @param u_ A 2D vector representing the data points (shape N × M)
+   * @param u_ A 2D span of doubles representing the data points (shape N × M)
    * @param lower_limit_ A vector of lower limits for each cluster (size M)
    * @param upper_limit_ A vector of upper limits for each cluster (size M)
    */

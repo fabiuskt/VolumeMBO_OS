@@ -7,10 +7,10 @@ import scipy as sp
 
 from volumembo.legacy import fit_median as fit_median_legacy
 from volumembo.median_fitter import VolumeMedianFitter
+from volumembo.timer import TimingManager
 from volumembo.utils import (
     bellman_ford_voronoi_initialization,
     onehot_to_labels,
-    timed,
 )
 
 from _volumembo import fit_median_cpp
@@ -66,8 +66,9 @@ class MBO:
         :threshold_method:
             Method for thresholding the diffused values, can be one of:
             - "argmax": simple argmax thresholding
-            - "fit_median_legacy": legacy implementation of fit median thresholding
+            - "fit_median_cpp": fit median thresholding using C++ implementation
             - "fit_median": fit median thresholding
+            - "fit_median_legacy": legacy implementation of fit median thresholding
         """
         self.A_3: sp.sparse.spmatrix | None = None
         self.A_minus_eig: sp.sparse.spmatrix | None = None
@@ -123,7 +124,7 @@ class MBO:
             "number_of_known_labels": 5,
             "diffusion_method": "spectral",
             "initial_clustering_method": "diffusion",
-            "threshold_method": "fit_median_legacy",
+            "threshold_method": "fit_median_cpp",
         }
         for key in kwargs:
             if key not in DEFAULTS:
@@ -159,15 +160,19 @@ class MBO:
         else:
             self.upper_limit = self.volume
 
+        self.number_of_known_labels = config["number_of_known_labels"]
+
+        # Timer for performance measurement
+        self.timer = TimingManager(enable=True)
+
         # Initialize variables
-        self._compute_diffusion_matrices()
+        with self.timer.time("build_matrices"):
+            self._compute_diffusion_matrices()
 
         # Set diffusion, initial clustering, threshold methods
         self.set_diffusion_method(config["diffusion_method"])
         self.set_clustering_initialization_function(config["initial_clustering_method"])
         self.set_threshold_function(config["threshold_method"])
-
-        self.number_of_known_labels = config["number_of_known_labels"]
 
     def get_initial_cluster(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
@@ -276,9 +281,11 @@ class MBO:
                 break
 
             # Diffuse the current clustering
-            u = np.require(
-                self.diffuse(chi), dtype=np.float64, requirements=["C_CONTIGUOUS"]
-            )
+            with self.timer.time("diffusion"):
+                # u = np.require(
+                #    self.diffuse(chi), dtype=np.float64, requirements=["C_CONTIGUOUS"]
+                # )
+                u = self.diffuse(chi)
 
             # Add temperature noise if configured
             if self.temperature is not None:
@@ -298,7 +305,8 @@ class MBO:
                 min_chi = chi.copy()
 
             # Update the clustering (one-hot encoding of the diffused values)
-            chi = self.threshold_function(u)
+            with self.timer.time("threshold"):
+                chi = self.threshold_function(u)
             chi = self._apply_fidelity_set(chi)
 
         self.new_labels = onehot_to_labels(min_chi)
@@ -311,13 +319,13 @@ class MBO:
             )
         return accuracy
 
-    @timed
     def run(
         self,
         iterations: int = 1,
         save_results: bool = False,
         output_dir: str = "results",
         dataset_name: str = "unknown",
+        enable_timing: bool = False,
     ) -> None:
         """
         Run the MBO algorithm for a specified number of iterations (different fidelity sets) and save results if requested.
@@ -327,18 +335,25 @@ class MBO:
             output_dir (str): Directory to save the results.
             dataset_name (str): Name of the dataset for saving results.
         """
+        # Initialize timing statistics
+        self.timer.enable = enable_timing
+        self.timer.reset("run")
+        self.timer.reset("diffusion")
+        self.timer.reset("threshold")
+
         accuracies = []
 
         # Run the MBO iterations
         for iteration in range(iterations):
             self.make_fidelity_set()
-            acc = self.run_mbo()
+            with self.timer.time("run"):
+                acc = self.run_mbo()
             accuracies.append(acc)
 
         # Compute mean and standard deviation of accuracies
         mean_acc = np.mean(accuracies)
         std_acc = np.std(accuracies)
-        print(f"\nAccuracy: ({mean_acc:.4f} ± {std_acc:.4f}) %")
+        print(f"Accuracy: ({mean_acc:.4f} ± {std_acc:.4f}) %\n")
 
         # Save results if requested
         if save_results:
@@ -349,12 +364,17 @@ class MBO:
                 output_dir, f"{dataset_name}_run_{timestamp}.npz"
             )
 
+            # Compute mean times of timed sections (diffusion and thresholding)
+            timing_summary = self.timer.summary()
+            print(timing_summary)
+
             save_kwargs = {
                 "dataset": dataset_name,
                 "iterations": iterations,
                 "accuracies": np.array(accuracies),
                 "mean_accuracy": mean_acc,
                 "std_accuracy": std_acc,
+                "timing_summary": timing_summary,
             }
 
             if (
@@ -533,13 +553,11 @@ class MBO:
         else:
             raise ValueError(f"Unknown initialization method: {method}")
 
-        print(f"Using clustering initialization method: {method}")
-
     def set_threshold_function(self, method: str) -> None:
         """
         Returns a threshold function based on the specified method.
         Args:
-            method (str): Method for thresholding, can be "argmax", "fit_median_legacy" or "fit_median".
+            method (str): Method for thresholding, can be "argmax", "fit_median_cpp", "fit_median", or "fit_median_legacy"
         """
         threshold_methods = {
             "argmax": lambda u: self._diffused_to_onehot(u),
@@ -560,8 +578,6 @@ class MBO:
         self.threshold_function = threshold_methods.get(method)
         if self.threshold_function is None:
             raise ValueError(f"Unknown threshold method: {method}")
-        else:
-            print(f"Using threshold method: {method}")
 
     @staticmethod
     def _diffused_to_onehot(u: np.ndarray) -> np.ndarray:

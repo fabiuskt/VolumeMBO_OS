@@ -1,43 +1,5 @@
-import time
-from functools import wraps
-from typing import Callable, TypeVar, ParamSpec
-
 import numpy as np
 import scipy as sp
-
-R = TypeVar("R")  # Return type of the function
-P = ParamSpec("P")  # Parameter types of the function
-
-
-def timed(func: Callable[P, R]) -> Callable[P, tuple[R, float]]:
-    """
-    Decorator that prints the execution time of the decorated function.
-
-    When applied to a function or method, this decorator prints a message
-    before and after execution, showing how long the function took to run.
-
-    Example:
-        @timed
-        def my_function():
-            ...
-
-    Args:
-        func (callable): The function to be timed.
-
-    Returns:
-        callable: The wrapped function with timing output.
-    """
-
-    @wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> tuple[R, float]:
-        print(f"Starting: {func.__name__}")
-        start = time.perf_counter()
-        result = func(*args, **kwargs)
-        elapsed = time.perf_counter() - start
-        print(f"Finished: {func.__name__} in {elapsed:.4f} s\n")
-        return result, elapsed
-
-    return wrapper
 
 
 def direction_to_grow(cluster_idx: int, number_of_labels: int) -> np.ndarray:
