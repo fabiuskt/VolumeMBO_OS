@@ -60,7 +60,7 @@ class CustomHeap:
 
     def _siftdown(self, startpos, pos):
         newitem = self.heap[pos]
-        # Follow the path to the root, moving parents down until finding a place newitem fits.
+        # Follow the path to the root, moving parents down until finding a place newitem fits
         while pos > startpos:
             parentpos = (pos - 1) >> 1
             parent = self.heap[parentpos]
@@ -77,10 +77,10 @@ class CustomHeap:
         endpos = len(self.heap)
         startpos = pos
         newitem = self.heap[pos]
-        # Bubble up the smaller child until hitting a leaf.
+        # Bubble up the smaller child until hitting a leaf
         childpos = 2 * pos + 1
         while childpos < endpos:
-            # Set childpos to index of smaller child.
+            # Set childpos to index of smaller child
             rightpos = childpos + 1
             if (
                 rightpos < endpos

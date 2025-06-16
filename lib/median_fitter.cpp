@@ -96,7 +96,7 @@ VolumeMedianFitter::fit()
     auto [pid, from_label, to_label] = candidates[0];
     double flip_time = compute_flip_time(pid, from_label, to_label);
 
-    // Optional: if you have 2 or more, pick the best one
+    // If 2 or more candidates are available, pick the best one
     if (candidates.size() > 1) {
       auto [pid_alt, from_alt, to_alt] = candidates[1];
       double ft_alt = compute_flip_time(pid_alt, from_alt, to_alt);

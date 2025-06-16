@@ -112,7 +112,7 @@ class MBO:
             )
         else:
             raise ValueError(
-                "You must provide either data or a precomputed weight_matrix."
+                "Either data or a precomputed weight_matrix must be provided."
             )
 
         DEFAULTS = {
@@ -357,7 +357,9 @@ class MBO:
                 "std_accuracy": std_acc,
             }
 
-            if self.data is not None and self.data.shape[0] < 5000:
+            if (
+                self.data is not None and self.data.shape[0] < 5000
+            ):  # arbitrary limit for saving data
                 save_kwargs["data"] = self.data
                 save_kwargs["labels"] = self.labels
                 save_kwargs["initial_cluster"] = onehot_to_labels(self.initial_cluster)

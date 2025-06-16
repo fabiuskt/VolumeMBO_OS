@@ -136,7 +136,7 @@ class SimplexPlotter:
 
         # Extract and remove known scatter-only kwargs before passing to plot
         plot_kwargs = kwargs.copy()
-        for bad_kw in ["s", "c"]:  # you can extend this list
+        for bad_kw in ["s", "c"]:
             plot_kwargs.pop(bad_kw, None)
 
         ### Project the median point to the simplex outline
@@ -243,7 +243,7 @@ class SimplexPlotter:
         # Compute normals (perpendicular to edges, pointing outward)
         def outward_normal(p1, p2):
             v = p2 - p1
-            n = np.array([-v[1], v[0]])  # 90° rotation
+            n = np.array([-v[1], v[0]])  # 90 deg rotation
             n /= np.linalg.norm(n)
             return n
 
