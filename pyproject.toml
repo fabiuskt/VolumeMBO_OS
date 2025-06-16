@@ -26,3 +26,6 @@ test = ["pytest"]
 
 [tool.scikit-build.cmake]
 minimum-version = "3.30"
+
+[tool.pre-commit]
+hook-types = ["pre-commit"]

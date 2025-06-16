@@ -31,6 +31,7 @@ target_link_libraries(_volumembo PUBLIC volumembo)
 install(TARGETS _volumembo DESTINATION .)
 
 # Compile the tests
+include(CTest)
 if(BUILD_TESTS)
   add_subdirectory(ext/Catch2)
   add_subdirectory(tests)
