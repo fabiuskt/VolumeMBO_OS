@@ -19,7 +19,7 @@ license-files = ["LICENSE.md"]
 readme = "README.md"
 authors = [{ name = "Fabius Krämer", email = "f.kraemer@math.uni-heidelberg.de" }]
 requires-python = ">=3.10"
-dependencies = ["annoy", "graphlearning", "matplotlib", "numpy", "scipy", "scikit-learn"]
+dependencies = ["graphlearning", "matplotlib", "numpy", "scipy", "scikit-learn"]
 
 [project.optional-dependencies]
 test = ["pytest"]
