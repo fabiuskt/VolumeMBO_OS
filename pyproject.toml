@@ -2,6 +2,7 @@
 # process itself.
 [build-system]
 requires = [
+    "ninja",
     "pybind11",
     "scikit-build-core",
 ]
@@ -24,8 +25,9 @@ dependencies = ["graphlearning", "matplotlib", "numpy", "scipy", "scikit-learn"]
 [project.optional-dependencies]
 test = ["pytest"]
 
-[tool.scikit-build.cmake]
-minimum-version = "3.30"
+[tool.scikit-build]
+cmake.version = ">=3.30"
+ninja.version = ">=1.11"
 
 [tool.pre-commit]
 hook-types = ["pre-commit"]

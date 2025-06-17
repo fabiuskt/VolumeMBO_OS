@@ -1,4 +1,5 @@
 cmake
+ninja
 numpy
 pre-commit
 pytest
