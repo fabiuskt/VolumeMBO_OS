@@ -1,4 +1,6 @@
 cmake
+numpy
 pre-commit
 pytest
 pytest-cov
+setuptools
