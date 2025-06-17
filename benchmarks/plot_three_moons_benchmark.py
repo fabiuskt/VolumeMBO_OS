@@ -139,7 +139,7 @@ def plot_results(input_data):
     ax2.set_yscale("log")
 
     ax2.set_xlim(left=9.0e1, right=2.5e5)
-    ax2.set_ylim(bottom=1.0e-6, top=1.0e1)
+    ax2.set_ylim(bottom=1.0e-6, top=1.0e3)
 
     # ax2.grid(True)
     # ax2.legend()

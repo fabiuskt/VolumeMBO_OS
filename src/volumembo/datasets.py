@@ -1,10 +1,9 @@
-import graphlearning as gl
 import numpy as np
 from sklearn.datasets import make_moons
 
 
 def load_dataset(
-    name: str, N: int = 100, noise: float = 0.0
+    name: str, N: int = 100, noise: float = 0.0, random_state: int | None = None
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Load a dataset by name.
@@ -17,9 +16,9 @@ def load_dataset(
         labels (np.ndarray): The dataset labels.
     """
     if name == "2_moons":
-        data, labels = make_moons(N=N, noise=noise)
+        data, labels = make_moons(N=N, noise=noise, random_state=random_state)
     elif name == "3_moons":
-        data, labels = make_3_moons(N=N, noise=noise)
+        data, labels = make_3_moons(N=N, noise=noise, random_state=random_state)
     elif name == "optdigits":
         d = np.loadtxt("../data/optdigits.csv", delimiter=",", dtype=int)
         data = d[:, :-1]

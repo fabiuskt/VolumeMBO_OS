@@ -2,6 +2,8 @@ cmake
 ninja
 numpy
 pre-commit
+pybind11
 pytest
 pytest-cov
+scikit-build-core
 setuptools

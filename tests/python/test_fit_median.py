@@ -6,7 +6,9 @@ import _volumembo
 
 def test_fit_median():
     # Load three moons dataset
-    data, labels = volumembo.datasets.load_dataset("3_moons", N=100, noise=0.075)
+    data, labels = volumembo.datasets.load_dataset(
+        "3_moons", N=100, noise=0.075, random_state=0
+    )
 
     # Create MBO object
     MBO = volumembo.MBO(
