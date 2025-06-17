@@ -1,11 +1,12 @@
 from collections.abc import Sequence
 
 import matplotlib as mpl
+from matplotlib.axes import Axes
 import numpy as np
 
 
 class SimplexPlotter:
-    def __init__(self, ax: mpl.axes.Axes) -> None:
+    def __init__(self, ax: Axes) -> None:
         self.ax = ax or mpl.pyplot.gca()
         self.A = np.array([0.0, 0.0])
         self.B = np.array([1.0, 0.0])
