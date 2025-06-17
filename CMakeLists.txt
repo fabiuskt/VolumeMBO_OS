@@ -13,11 +13,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Enable PIC for Python bindings
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-# Compilation options
-set(BUILD_TESTS
-    ON
-    CACHE BOOL "Enable building of C++ tests")
-
 # Compile the library
 add_library(volumembo lib/median_fitter.cpp)
 

@@ -41,7 +41,7 @@ jobs:
 
     - name: Install Python package
       run: |
-        python -m pip install --no-build-isolation --config-settings=build-dir="build" --config-settings=cmake.build-type="Debug" --config-settings=cmake.define.BUILD_TESTS="ON" -v .
+        python -m pip install --no-build-isolation --config-settings=build-dir="build" --config-settings=cmake.build-type="Debug" --config-settings=cmake.define.BUILD_TESTS="ON" --config-settings=build.verbose=1 -v .
 
     - name: run C++ tests
       shell: bash
