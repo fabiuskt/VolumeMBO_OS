@@ -31,9 +31,6 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: make build directory
-      run: cmake -E make_directory ${{runner.workspace}}/build
-
     - name: Install Python development requirements
       run: |
         python -m pip install -r requirements-dev.txt
@@ -41,27 +38,7 @@ jobs:
 
     - name: Install Python package
       run: |
-        python -m pip install --no-build-isolation --config-settings=build-dir="build" --config-settings=cmake.build-type="Debug" --config-settings=cmake.define.BUILD_TESTS="ON" --config-settings=build.verbose=1 -v .
-
-    - name: Print GitHub environment variables
-      run: |
-        echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
-        echo "RUNNER_WORKSPACE: ${{ runner.workspace }}"
-        echo "HOME: $HOME"
-        echo "PWD: $(pwd)"
-        echo "Listing contents of GITHUB_WORKSPACE:"
-        ls -al "$GITHUB_WORKSPACE"
-        echo "Listing contents of RUNNER_WORKSPACE:"
-        ls -al "${{ runner.workspace }}"
-
-    - name: Debug test discovery
-      shell: bash
-      working-directory: ${{runner.workspace}}/build
-      run: |
-        echo "Build tree:"
-        find .
-        echo "CTest file:"
-        cat CTestTestfile.cmake || echo "No CTestTestfile.cmake"
+        python -m pip install --no-build-isolation --config-settings=build-dir="build" --config-settings=cmake.build-type="Debug" --config-settings=cmake.define.BUILD_TESTS="ON" --config-settings=build.verbose=0 -v .
 
     - name: run C++ tests
       shell: bash
