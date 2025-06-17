@@ -4,7 +4,7 @@
 TEST_CASE("ModifiablePriorityQueue as min-heap")
 {
 
-  std::vector<int> list = { 5, 3, 8, 1, -5, 6, 2 };
+  const std::vector<int> list = { 5, 3, 8, 1, -5, 6, 2 };
 
   SECTION("Min-Heap")
   {
