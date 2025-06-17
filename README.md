@@ -21,9 +21,21 @@ In order to build the package from source, the following tools are also needed.
 ### Building from source using pip
 
 The following sequence of commands is used to build `volumeMBO` from source:
+
 ```
 git clone https://github.com/fabiuskt/VolumeMBO_OS
 cd VolumeMBO_OS
+python -m pip install .
+```
+
+#### Development installation
+
+If you intend to contribute to the development of volumembo, we recommend a locally compiled version using these instructions:
+
+```
+git clone https://github.com/fabiuskt/VolumeMBO_OS
+cd VolumeMBO_OS
+python -m pip install -r requirements-dev.txt
 python -m pip install --no-build-isolation --config-settings=build-dir="build" -v -e .
 ```
 
