@@ -144,7 +144,7 @@ def plot_results(input_data):
     # ax2.grid(True)
     # ax2.legend()
 
-    ax2.set_xlabel("Number of samples N log(N)")
+    ax2.set_xlabel("Number of samples N")
     ax2.set_ylabel("Elapsed time t /s")
     #############################################################################################
     plt.subplots_adjust(left=0.1, right=0.95, top=0.95, bottom=0.1)
