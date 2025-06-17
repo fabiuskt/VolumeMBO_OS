@@ -1,7 +1,7 @@
 ## VolumeMBO_OS
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/MIT)
-[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/fabiuskt/VolumeMBO_OS/ci.yml?branch=main)](https://github.com/3fabiuskt/VolumeMBO_OS/actions/workflows/ci.yml)
+[![Build](https://github.com/fabiuskt/VolumeMBO_OS/actions/workflows/ci.yml/badge.svg)](https://github.com/fabiuskt/VolumeMBO_OS/actions)
 
 `volumembo` is a python package providing an implementation of an "efficient volume-preserving MBO scheme for data clustering and classification" discussed in [Krämer, Laux, arXiv:2412.17694 (2024)](#-literature). `volumembo` also provides a C++ backend with an efficient implementation of the volume-preserving MBO scheme.
 
