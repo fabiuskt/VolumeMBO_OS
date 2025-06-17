@@ -1,6 +1,10 @@
 #include "catch2/catch_test_macros.hpp"
 #include "volumembo/priority_queue.hpp"
 
+#include <algorithm>
+#include <functional>
+#include <vector>
+
 TEST_CASE("ModifiablePriorityQueue as min-heap")
 {
 
