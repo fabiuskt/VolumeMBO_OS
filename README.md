@@ -33,13 +33,13 @@ python -m pip install .
 If you intend to contribute to the development of volumembo, we recommend a locally compiled version using these instructions:
 
 ```
-git clone https://github.com/fabiuskt/VolumeMBO_OS
+git clone --recurse-submodules https://github.com/fabiuskt/VolumeMBO_OS
 cd VolumeMBO_OS
 python -m pip install -r requirements-dev.txt
 python -m pip install --no-build-isolation --config-settings=build-dir="build" -v -e .
 ```
 
-This installs the `volumembo` package and exposes the CMake build directory as `build`. The `-e` (editable) flag allows the change of Python sources of `volumembo` without reinstalling the package. The `-v` flag enables verbose output which gives you detailed information about the compilation process that you should include into potential bug reports. To recompile the C++ source, please re-run `pip install`.
+This clones the repository including all submodules, installs the `volumembo` package, and exposes the CMake build directory as `build`. The `-e` (editable) flag allows the change of Python sources of `volumembo` without reinstalling the package. The `-v` flag enables verbose output which gives you detailed information about the compilation process that you should include into potential bug reports. To recompile the C++ source, please re-run `pip install`.
 
 ### Demo
 
