@@ -1,0 +1,30 @@
+# Byte-compiled
+__pycache__/
+
+# Packaging metadata
+*.egg-info/
+*.egg/
+*.wheel/
+dist/
+build/
+
+# Data directories
+jupyter/data/
+jupyter/knn_data/
+jupyter/results/
+
+# Non-text files
+*.pdf
+*.png
+*.jpg
+*.jpeg
+*.pkl
+
+# But keep PNG files in img/
+!img/*.png
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# VSCode Configuration
+.vscode/

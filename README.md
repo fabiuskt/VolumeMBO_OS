@@ -1,13 +1,54 @@
 ## VolumeMBO_OS
-This is the GitHub repository to the Paper 
-Krämer, Fabius, and Tim Laux. "An efficient volume-preserving MBO scheme for data clustering and classification." arXiv preprint arXiv:2412.17694 (2024).
 
-## Files
-The [LU_order_statistic.py](https://github.com/fabiuskt/VolumeMBO_OS/blob/main/LU_order_statistic.py) contains the implementation of the algorithm to find the $(L,U)$-order statistic.
-The files [mnist_final.py](https://github.com/fabiuskt/VolumeMBO_OS/blob/main/mnist_final.py), [optdigits_final.py](https://github.com/fabiuskt/VolumeMBO_OS/blob/main/optdigits_final.py) and [three_moons_final.py](https://github.com/fabiuskt/VolumeMBO_OS/blob/main/three_moons_final.py) implement the MBO scheme with different diffusion kernels on the MNIST, OPT-digits and Three-Moons dataset, respectively. 
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/MIT)
+[![Build](https://github.com/fabiuskt/VolumeMBO_OS/actions/workflows/ci.yml/badge.svg)](https://github.com/fabiuskt/VolumeMBO_OS/actions)
 
-## Libraries
-Necessary libraries:
-1. [scikit-learn](https://pypi.org/project/scikit-learn/)
-2. [scipy](https://scipy.org/)
-3. [graphlearning](https://github.com/jwcalder/GraphLearning?tab=readme-ov-file)
+`volumembo` is a python package providing an implementation of an "efficient volume-preserving MBO scheme for data clustering and classification" discussed in [Krämer, Laux, arXiv:2412.17694 (2024)](#-literature). `volumembo` also provides a C++ backend with an efficient implementation of the volume-preserving MBO scheme.
+
+## 💻 Installation
+
+### Prerequisites
+
+Using `volumembo` requires the following software installed:
+
+* Python `>= 3.10`
+
+In order to build the package from source, the following tools are also needed.
+
+* A C++20-compliant compiler
+* CMake `>= 3.30`
+
+### Building from source using pip
+
+The following sequence of commands is used to build `volumeMBO` from source:
+
+```
+git clone https://github.com/fabiuskt/VolumeMBO_OS
+cd VolumeMBO_OS
+python -m pip install .
+```
+
+#### Development installation
+
+If you intend to contribute to the development of volumembo, we recommend a locally compiled version using these instructions:
+
+```
+git clone --recurse-submodules https://github.com/fabiuskt/VolumeMBO_OS
+cd VolumeMBO_OS
+python -m pip install -r requirements-dev.txt
+python -m pip install --no-build-isolation --config-settings=build-dir="build" -v -e .
+```
+
+This clones the repository including all submodules, installs the `volumembo` package, and exposes the CMake build directory as `build`. The `-e` (editable) flag allows the change of Python sources of `volumembo` without reinstalling the package. The `-v` flag enables verbose output which gives you detailed information about the compilation process that you should include into potential bug reports. To recompile the C++ source, please re-run `pip install`.
+
+### Demo
+
+[![Example 1](img/volumeMBO_clustering_0.png)]()
+[![Example 2](img/volumeMBO_clustering_1.png)]()
+
+## 📚 Literature
+Krämer, F., and Laux, T., "An efficient volume-preserving MBO scheme for data clustering and classification." arXiv:2412.17694 (2024). DOI: [10.48550/arXiv.2412.17694](https://doi.org/10.48550/arXiv.2412.17694)
+
+## 📜 License
+
+See [LICENSE.md](LICENSE.md).
