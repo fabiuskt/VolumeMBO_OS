@@ -5,11 +5,13 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <iostream>
+#include <iterator>
 #include <map>
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <tuple>
+#include <utility>
 #include <vector>
 
 namespace volumembo {
@@ -90,24 +92,26 @@ VolumeMedianFitter::fit()
         }
       }
     }
-    if (candidates.size() < 1) {
+    if (candidates.empty()) {
       throw std::runtime_error("Not enough valid candidates for cluster " +
                                std::to_string(cluster) + " at iteration " +
                                std::to_string(iteration));
     }
 
-    auto [pid, from_label, to_label] = candidates[0];
-    double flip_time = compute_flip_time(pid, from_label, to_label);
+    // Identify closest point to flip, and it's current queue assignment
+    PID pid = 0;
+    Label from_label = 0, to_label = 0;
+    double flip_time = 0.0;
+    bool first = true;
 
-    // If 2 or more candidates are available, pick the best one
-    if (candidates.size() > 1) {
-      auto [pid_alt, from_alt, to_alt] = candidates[1];
-      double ft_alt = compute_flip_time(pid_alt, from_alt, to_alt);
-      if (ft_alt < flip_time) {
-        pid = pid_alt;
-        from_label = from_alt;
-        to_label = to_alt;
-        flip_time = ft_alt;
+    for (const auto& [pid_i, from_i, to_i] : candidates) {
+      double ft = compute_flip_time(pid_i, from_i, to_i);
+      if (first || ft < flip_time) {
+        pid = pid_i;
+        from_label = from_i;
+        to_label = to_i;
+        flip_time = ft;
+        first = false;
       }
     }
 

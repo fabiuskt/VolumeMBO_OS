@@ -25,7 +25,7 @@ public:
    * @param rows The number of rows
    * @param cols The number of columns
    */
-  Span2D(std::span<T> data, size_t rows, size_t cols)
+  Span2D(std::span<T> data, std::size_t rows, std::size_t cols)
     : data_(data)
     , rows_(rows)
     , cols_(cols)
@@ -39,7 +39,7 @@ public:
    * @param rows The number of rows
    * @param cols The number of columns
    */
-  Span2D(const T* data_ptr, size_t rows, size_t cols)
+  Span2D(const T* data_ptr, std::size_t rows, std::size_t cols)
     : data_(data_ptr, rows * cols)
     , rows_(rows)
     , cols_(cols)
@@ -54,16 +54,19 @@ public:
    *
    * @return The element at the specified position
    */
-  T operator()(size_t i, size_t j) const { return data_[i * cols_ + j]; }
+  T operator()(std::size_t i, std::size_t j) const
+  {
+    return data_[i * cols_ + j];
+  }
 
   //! @brief Get the number of rows
-  size_t rows() const { return rows_; }
+  std::size_t rows() const { return rows_; }
   //! @brief Get the number of columns
-  size_t cols() const { return cols_; }
+  std::size_t cols() const { return cols_; }
 
 private:
   std::span<T> data_;
-  size_t rows_, cols_;
+  std::size_t rows_, cols_;
 };
 
 } // namespace volumembo
