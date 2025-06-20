@@ -3,6 +3,7 @@
 #include "volumembo/priority_queue.hpp"
 #include "volumembo/span2d.hpp"
 
+#include <cstddef>
 #include <map>
 #include <optional>
 #include <vector>
@@ -115,7 +116,7 @@ private:
    * @return A vector of doubles representing the difference between the data
    * point and the current median
    */
-  std::vector<double> compute_u_minus_m(size_t index) const;
+  std::vector<double> compute_u_minus_m(std::size_t index) const;
 
   /**
    * @brief Initialize the priority queues for all label pairs

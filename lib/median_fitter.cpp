@@ -4,6 +4,7 @@
 #include "volumembo/span2d.hpp"
 
 #include <algorithm>
+#include <cstddef>
 #include <iostream>
 #include <map>
 #include <optional>
@@ -54,8 +55,8 @@ VolumeMedianFitter::VolumeMedianFitter(
 std::vector<double>
 VolumeMedianFitter::fit()
 {
-  const double eps = 1.0e-4;
-  const int max_iter = 100;
+  constexpr double eps = 1.0e-4;
+  constexpr int max_iter = 100;
   unsigned int iteration = 0;
   int offset = 0;
 
@@ -134,7 +135,7 @@ VolumeMedianFitter::assign_clusters()
 {
   cluster_sizes.assign(M, 0);
 
-  for (size_t i = 0; i < N; ++i) {
+  for (std::size_t i = 0; i < N; ++i) {
     std::vector<double> u_minus_m = compute_u_minus_m(i);
     for (unsigned int j = 0; j < M; ++j) {
       u_minus_m[j] -= median[j];
@@ -161,7 +162,7 @@ VolumeMedianFitter::compute_flip_time(PID pid,
 }
 
 std::vector<double>
-VolumeMedianFitter::compute_u_minus_m(size_t index) const
+VolumeMedianFitter::compute_u_minus_m(std::size_t index) const
 {
   std::vector<double> u_minus_m(M);
   for (unsigned int j = 0; j < M; ++j) {
