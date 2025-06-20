@@ -5,6 +5,7 @@
 #include <pybind11/stl.h>
 
 #include <memory>
+#include <utility>
 #include <vector>
 
 namespace py = pybind11;
