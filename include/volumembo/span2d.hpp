@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <cstddef>
 #include <span>
 
@@ -56,12 +57,14 @@ public:
    */
   T operator()(std::size_t i, std::size_t j) const
   {
+    assert(i < rows_ && j < cols_ && "Span2D: Index out of bounds");
     return data_[i * cols_ + j];
   }
 
-  //! @brief Get the number of rows
+  //! Get the number of rows
   std::size_t rows() const { return rows_; }
-  //! @brief Get the number of columns
+
+  //! Get the number of columns
   std::size_t cols() const { return cols_; }
 
 private:
