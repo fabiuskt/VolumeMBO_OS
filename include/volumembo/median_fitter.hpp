@@ -1,7 +1,7 @@
 #pragma once
 
-#include "volumembo/priority_queue.hpp"
-#include "volumembo/span2d.hpp"
+#include <volumembo/priority_queue.hpp>
+#include <volumembo/span2d.hpp>
 
 #include <cstddef>
 #include <map>

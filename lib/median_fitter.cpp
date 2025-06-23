@@ -1,7 +1,7 @@
-#include "volumembo/median_fitter.hpp"
+#include <volumembo/median_fitter.hpp>
 
-#include "volumembo/priority_queue.hpp"
-#include "volumembo/span2d.hpp"
+#include <volumembo/priority_queue.hpp>
+#include <volumembo/span2d.hpp>
 
 #include <algorithm>
 #include <cstddef>

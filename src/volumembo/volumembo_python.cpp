@@ -2,9 +2,9 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "volumembo/median_fitter.hpp"
-#include "volumembo/pybind11_numpy_interop.hpp"
-#include "volumembo/span2d.hpp"
+#include <volumembo/median_fitter.hpp>
+#include <volumembo/pybind11_numpy_interop.hpp>
+#include <volumembo/span2d.hpp>
 
 #include <cstddef>
 #include <stdexcept>
