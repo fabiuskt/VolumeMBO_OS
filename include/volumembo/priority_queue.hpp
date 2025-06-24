@@ -3,6 +3,7 @@
 #include <cassert>
 #include <concepts>
 #include <cstddef>
+#include <functional>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -104,7 +105,7 @@ public:
     if (it == index_in_heap.end())
       return;
 
-    size_t i = it->second;
+    std::size_t i = it->second;
     PIDType last_id = heap.back();
 
     if (i != heap.size() - 1) {
@@ -126,7 +127,7 @@ private:
   std::vector<PIDType> heap;
 
   //! A map to keep track of the index of each element in the heap
-  std::unordered_map<PIDType, size_t> index_in_heap;
+  std::unordered_map<PIDType, std::size_t> index_in_heap;
 
   //! The comparator functor to maintain the heap property
   Comparator compare;
@@ -136,14 +137,14 @@ private:
    *
    * @param i The index of the element to sift up
    */
-  void sift_up(size_t i)
+  void sift_up(std::size_t i)
   {
     PIDType item = heap[i];
-    size_t current = i;
+    std::size_t current = i;
 
     // Find the correct position for item
     while (current > 0) {
-      size_t parent = (current - 1) / 2;
+      std::size_t parent = (current - 1) / 2;
       if (compare(heap[parent], item)) {
         heap[current] = heap[parent];
         index_in_heap[heap[current]] = current;
@@ -164,18 +165,18 @@ private:
    *
    * @return true if the element was moved, false otherwise
    */
-  bool sift_down(size_t i)
+  bool sift_down(std::size_t i)
   {
-    size_t n = heap.size();
-    size_t start = i;
+    std::size_t n = heap.size();
+    std::size_t start = i;
     PIDType item = heap[i];
 
     while (true) {
-      size_t left = 2 * i + 1;
-      size_t right = 2 * i + 2;
+      std::size_t left = 2 * i + 1;
+      std::size_t right = 2 * i + 2;
 
       // Choose the better child according to comparator
-      size_t best = i;
+      std::size_t best = i;
 
       if (left < n && compare(item, heap[left])) {
         best = left;

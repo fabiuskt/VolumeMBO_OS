@@ -1,9 +1,9 @@
-#include "catch2/catch_test_macros.hpp"
-#include "volumembo/priority_queue.hpp"
-#include <catch2/catch_approx.hpp>
+#include <volumembo/median_fitter.hpp>
+#include <volumembo/priority_queue.hpp>
+#include <volumembo/span2d.hpp>
 
-#include "volumembo/median_fitter.hpp"
-#include "volumembo/span2d.hpp"
+#include <catch2/catch_approx.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include <numeric>
 #include <vector>

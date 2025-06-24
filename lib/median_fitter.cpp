@@ -1,14 +1,17 @@
-#include "volumembo/median_fitter.hpp"
+#include <volumembo/median_fitter.hpp>
 
-#include "volumembo/priority_queue.hpp"
-#include "volumembo/span2d.hpp"
+#include <volumembo/priority_queue.hpp>
+#include <volumembo/span2d.hpp>
 
 #include <algorithm>
-#include <iostream>
+#include <cstddef>
+#include <iterator>
 #include <map>
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <tuple>
+#include <utility>
 #include <vector>
 
 namespace volumembo {
@@ -54,8 +57,8 @@ VolumeMedianFitter::VolumeMedianFitter(
 std::vector<double>
 VolumeMedianFitter::fit()
 {
-  const double eps = 1.0e-4;
-  const int max_iter = 100;
+  constexpr double eps = 1.0e-4;
+  constexpr int max_iter = 100;
   unsigned int iteration = 0;
   int offset = 0;
 
@@ -89,24 +92,26 @@ VolumeMedianFitter::fit()
         }
       }
     }
-    if (candidates.size() < 1) {
+    if (candidates.empty()) {
       throw std::runtime_error("Not enough valid candidates for cluster " +
                                std::to_string(cluster) + " at iteration " +
                                std::to_string(iteration));
     }
 
-    auto [pid, from_label, to_label] = candidates[0];
-    double flip_time = compute_flip_time(pid, from_label, to_label);
+    // Identify closest point to flip, and it's current queue assignment
+    PID pid = 0;
+    Label from_label = 0, to_label = 0;
+    double flip_time = 0.0;
+    bool first = true;
 
-    // If 2 or more candidates are available, pick the best one
-    if (candidates.size() > 1) {
-      auto [pid_alt, from_alt, to_alt] = candidates[1];
-      double ft_alt = compute_flip_time(pid_alt, from_alt, to_alt);
-      if (ft_alt < flip_time) {
-        pid = pid_alt;
-        from_label = from_alt;
-        to_label = to_alt;
-        flip_time = ft_alt;
+    for (const auto& [pid_i, from_i, to_i] : candidates) {
+      double ft = compute_flip_time(pid_i, from_i, to_i);
+      if (first || ft < flip_time) {
+        pid = pid_i;
+        from_label = from_i;
+        to_label = to_i;
+        flip_time = ft;
+        first = false;
       }
     }
 
@@ -134,7 +139,7 @@ VolumeMedianFitter::assign_clusters()
 {
   cluster_sizes.assign(M, 0);
 
-  for (size_t i = 0; i < N; ++i) {
+  for (std::size_t i = 0; i < N; ++i) {
     std::vector<double> u_minus_m = compute_u_minus_m(i);
     for (unsigned int j = 0; j < M; ++j) {
       u_minus_m[j] -= median[j];
@@ -161,7 +166,7 @@ VolumeMedianFitter::compute_flip_time(PID pid,
 }
 
 std::vector<double>
-VolumeMedianFitter::compute_u_minus_m(size_t index) const
+VolumeMedianFitter::compute_u_minus_m(std::size_t index) const
 {
   std::vector<double> u_minus_m(M);
   for (unsigned int j = 0; j < M; ++j) {
