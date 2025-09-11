@@ -2,8 +2,8 @@
 #include <volumembo/priority_queue.hpp>
 #include <volumembo/span2d.hpp>
 
-#include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_floating_point.hpp>
 
 #include <numeric>
 #include <vector>
@@ -36,7 +36,7 @@ TEST_CASE("Fit median 2D")
 
     // Check that the sum is approximately 1.0
     double sum = std::accumulate(result.begin(), result.end(), 0.0);
-    REQUIRE(sum == Catch::Approx(1.0).epsilon(1e-8));
+    REQUIRE_THAT(sum, Catch::Matchers::WithinRel(1.0, 1e-8));
   }
 
   SECTION("2D Shrink cluster 0")
@@ -59,7 +59,7 @@ TEST_CASE("Fit median 2D")
 
     // Check that the sum is approximately 1.0
     double sum = std::accumulate(result.begin(), result.end(), 0.0);
-    REQUIRE(sum == Catch::Approx(1.0).epsilon(1e-8));
+    REQUIRE_THAT(sum, Catch::Matchers::WithinRel(1.0, 1e-8));
   }
 }
 
@@ -93,6 +93,6 @@ TEST_CASE("Fit median 3D")
 
     // Check that the sum is approximately 1.0
     double sum = std::accumulate(result.begin(), result.end(), 0.0);
-    REQUIRE(sum == Catch::Approx(1.0).epsilon(1e-8));
+    REQUIRE_THAT(sum, Catch::Matchers::WithinRel(1.0, 1e-8));
   }
 }

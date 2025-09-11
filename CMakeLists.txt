@@ -13,7 +13,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Enable PIC for Python bindings
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-# Compile the library
+# Compile the core volumembo library
 add_library(volumembo lib/median_fitter.cpp)
 
 # Add the include directory
@@ -21,13 +21,16 @@ target_include_directories(volumembo PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
 # Add Python bindings
 find_package(pybind11 CONFIG REQUIRED)
+
+# Define Python extension module
 pybind11_add_module(_volumembo MODULE src/volumembo/volumembo_python.cpp)
 target_link_libraries(_volumembo PUBLIC volumembo)
+
+# Install th Python module library target
 install(TARGETS _volumembo DESTINATION .)
 
-# Compile the tests
+# Optionally build tests
 include(CTest)
 if(BUILD_TESTS)
-  add_subdirectory(ext/Catch2)
   add_subdirectory(tests)
 endif()
