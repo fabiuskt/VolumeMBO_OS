@@ -35,5 +35,8 @@ minimum-version = "build-system.requires"
 cmake.version = "CMakeLists.txt"
 ninja.version = ">=1.11"
 
+[tool.scikit-build.cmake.define]
+BUILD_TESTS = "OFF"
+
 [tool.pre-commit]
 hook-types = ["pre-commit"]
