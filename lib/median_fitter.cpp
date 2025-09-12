@@ -60,7 +60,7 @@ VolumeMedianFitter::fit()
   constexpr double eps = 1.0e-4;
   constexpr int max_iter = 100;
   unsigned int iteration = 0;
-  int offset = 0;
+  unsigned int offset = 0;
 
   while (!volumes_matched()) {
     if (iteration > max_iter)
