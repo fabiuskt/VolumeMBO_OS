@@ -57,7 +57,6 @@ VolumeMedianFitter::VolumeMedianFitter(
 std::vector<double>
 VolumeMedianFitter::fit()
 {
-  constexpr double eps = 1.0e-4;
   constexpr unsigned int max_iter = 100;
   unsigned int iteration = 0;
   unsigned int offset = 0;
@@ -117,7 +116,7 @@ VolumeMedianFitter::fit()
 
     // Update median
     for (unsigned int j = 0; j < M; ++j) {
-      median[j] += (1.0 + eps) * flip_time * dir[j];
+      median[j] += flip_time * dir[j];
     }
     // Update queues
     remove(pid, from_label);
