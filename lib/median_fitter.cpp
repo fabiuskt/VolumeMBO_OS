@@ -58,7 +58,7 @@ std::vector<double>
 VolumeMedianFitter::fit()
 {
   constexpr double eps = 1.0e-4;
-  constexpr int max_iter = 100;
+  constexpr unsigned int max_iter = 100;
   unsigned int iteration = 0;
   unsigned int offset = 0;
 
