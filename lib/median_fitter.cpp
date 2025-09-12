@@ -299,4 +299,25 @@ VolumeMedianFitter::volumes_matched() const
   return true;
 }
 
+std::vector<int>
+VolumeMedianFitter::volume_violations() const
+{
+  std::vector<int> violations(M, 0);
+
+  for (Label i = 0; i < M; ++i) {
+    int size = static_cast<int>(cluster_sizes[i]);
+    int lower = static_cast<int>(lower_limit[i]);
+    int upper = static_cast<int>(upper_limit[i]);
+
+    if (size < lower)
+      violations[i] = size - lower; // negative
+    else if (size > upper)
+      violations[i] = size - upper; // positive
+    else
+      violations[i] = 0; // inside range
+  }
+
+  return violations;
+}
+
 }

@@ -193,6 +193,14 @@ private:
    * otherwise
    */
   bool volumes_matched() const;
+
+  /**
+   * @brief Compute the volume violations for each cluster
+   *
+   * @return A vector of integers representing the volume violations for each
+   * cluster
+   */
+  std::vector<int> volume_violations() const;
 };
 
 } // namespace volumembo
