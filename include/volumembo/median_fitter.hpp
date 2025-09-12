@@ -177,30 +177,12 @@ private:
   void remove(PID pid, Label from_label);
 
   /**
-   * @brief Select a label to modify based on the current cluster sizes and
-   * limits
-   *
-   * @param offset Offset to adjust the selection process
-   *
-   * @return The label of the selected cluster
-   */
-  Label select_label(int offset) const;
-
-  /**
    * @brief Check if the volumes of all clusters match their limits
    *
    * @return true if all clusters' sizes are within their limits, false
    * otherwise
    */
   bool volumes_matched() const;
-
-  /**
-   * @brief Compute the volume violations for each cluster
-   *
-   * @return A vector of integers representing the volume violations for each
-   * cluster
-   */
-  std::vector<int> volume_violations() const;
 };
 
 } // namespace volumembo

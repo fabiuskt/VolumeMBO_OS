@@ -4,8 +4,11 @@
 #include <volumembo/span2d.hpp>
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
+#include <iostream>
 #include <iterator>
+#include <limits>
 #include <map>
 #include <optional>
 #include <stdexcept>
@@ -13,6 +16,8 @@
 #include <tuple>
 #include <utility>
 #include <vector>
+
+#include <sstream>
 
 namespace volumembo {
 
@@ -57,79 +62,140 @@ VolumeMedianFitter::VolumeMedianFitter(
 std::vector<double>
 VolumeMedianFitter::fit()
 {
-  constexpr unsigned int max_iter = 100;
+
+  struct Event
+  {
+    double t = std::numeric_limits<double>::infinity();
+    PID pid = 0;
+    Label from = 0;
+    Label to = 0;
+    std::vector<double> dir;
+  };
+
+  constexpr unsigned int max_iter = 100000;
   unsigned int iteration = 0;
-  unsigned int offset = 0;
 
   while (!volumes_matched()) {
     if (iteration > max_iter)
       break;
 
-    Label cluster = select_label(offset);
-    offset = (cluster + 1) % M;
+    Event best;
 
-    std::vector<std::tuple<PID, Label, Label>> candidates;
-    bool grow = cluster_sizes[cluster] < lower_limit[cluster];
-    std::vector<double> dir = directions[cluster];
+    for (Label i = 0; i < M; ++i) {
+      unsigned int size_i = cluster_sizes[i];
+      unsigned int lower_i = lower_limit[i];
+      unsigned int upper_i = upper_limit[i];
 
-    if (grow) {
-      Label to_label = cluster;
-      for (Label from_label : other_labels[to_label]) {
-        auto pid_opt = peek(from_label, to_label);
-        if (pid_opt) {
-          candidates.emplace_back(*pid_opt, from_label, to_label);
+      const std::vector<double> dir = directions[i];
+
+      // --- Shrink direction (-i) ---
+      if (size_i > lower_i) { // i can give away a point
+        for (Label receiver : other_labels[i]) {
+          unsigned int size_receiver = cluster_sizes[receiver];
+          unsigned int lower_receiver = lower_limit[receiver];
+          unsigned int upper_receiver = upper_limit[receiver];
+
+          if (size_receiver < upper_receiver &&
+              (size_receiver < lower_receiver || size_i > upper_i)) {
+            if (auto pid_opt = peek(i, receiver)) {
+              double t = compute_flip_time(*pid_opt, i, receiver);
+              if (t < best.t) {
+                std::vector<double> dir_shrink = dir;
+                for (double& v : dir_shrink)
+                  v = -v;
+
+                best.t = t;
+                best.pid = *pid_opt;
+                best.from = i;
+                best.to = receiver;
+                best.dir = dir_shrink;
+              }
+            }
+          }
         }
       }
-    } else {
-      for (double& val : dir)
-        val = -val;
-      Label from_label = cluster;
-      for (Label to_label : other_labels[from_label]) {
-        auto pid_opt = peek(from_label, to_label);
-        if (pid_opt) {
-          candidates.emplace_back(*pid_opt, from_label, to_label);
+
+      // --- Grow direction (+i) ---
+      if (size_i < upper_i) { // i can receive a point
+        for (Label donor : other_labels[i]) {
+          unsigned int size_donor = cluster_sizes[donor];
+          unsigned int lower_donor = lower_limit[donor];
+          unsigned int upper_donor = upper_limit[donor];
+
+          if (size_donor > lower_donor &&
+              (size_donor > upper_donor || size_i < lower_i)) {
+            if (auto pid_opt = peek(donor, i)) {
+              double t = compute_flip_time(*pid_opt, donor, i);
+              if (t < best.t) {
+                best.t = t;
+                best.pid = *pid_opt;
+                best.from = donor;
+                best.to = i;
+                best.dir = dir; // grow direction = +i
+              }
+            }
+          }
         }
       }
     }
-    if (candidates.empty()) {
-      throw std::runtime_error("Not enough valid candidates for cluster " +
-                               std::to_string(cluster) + " at iteration " +
-                               std::to_string(iteration));
-    }
 
-    // Identify closest point to flip, and it's current queue assignment
-    PID pid = 0;
-    Label from_label = 0, to_label = 0;
-    double flip_time = 0.0;
-    bool first = true;
-
-    for (const auto& [pid_i, from_i, to_i] : candidates) {
-      double ft = compute_flip_time(pid_i, from_i, to_i);
-      if (first || ft < flip_time) {
-        pid = pid_i;
-        from_label = from_i;
-        to_label = to_i;
-        flip_time = ft;
-        first = false;
-      }
+    if (!std::isfinite(best.t)) {
+      throw std::runtime_error(
+        "fit() failed: no valid flip found at iteration " +
+        std::to_string(iteration));
     }
 
     // Update median
     for (unsigned int j = 0; j < M; ++j) {
-      median[j] += flip_time * dir[j];
+      median[j] += best.t * best.dir[j];
     }
+
     // Update queues
-    remove(pid, from_label);
-    insert_into_queues(pid, to_label);
+    remove(best.pid, best.from);
+    insert_into_queues(best.pid, best.to);
+
+    // ---- DEBUG ----
+    long long mismatch = 0;
+    for (Label k = 0; k < M; ++k) {
+      mismatch +=
+        std::llabs((long long)cluster_sizes[k] - (long long)lower_limit[k]);
+    }
+
+    std::ostringstream oss;
+    oss << "Iteration " << iteration << ", mismatch=" << mismatch << "\n";
+    for (Label k = 0; k < M; ++k) {
+      int size = (int)cluster_sizes[k];
+      int lower = (int)lower_limit[k];
+      int upper = (int)upper_limit[k];
+      oss << "  Cluster " << k << ": size=" << size << " (range [" << lower
+          << "," << upper << "])\n";
+    }
+
+    int from_sz = (int)cluster_sizes[best.from];
+    int to_sz = (int)cluster_sizes[best.to];
+    int from_lo = (int)lower_limit[best.from];
+    int from_up = (int)upper_limit[best.from];
+    int to_lo = (int)lower_limit[best.to];
+    int to_up = (int)upper_limit[best.to];
+
+    oss << "  >> Flip event: " << best.from << " → " << best.to
+        << " (pid=" << best.pid << ", t=" << best.t << ")\n"
+        << "     from_size " << from_sz << " -> " << (from_sz - 1)
+        << " (range [" << from_lo << "," << from_up << "])\n"
+        << "     to_size   " << to_sz << " -> " << (to_sz + 1) << " (range ["
+        << to_lo << "," << to_up << "])\n"
+        << "--------------------------------------\n";
+
+    std::cerr << oss.str() << std::flush; // single write
 
     // Update clusters
-    labels[pid] = to_label;
-    cluster_sizes[from_label]--;
-    cluster_sizes[to_label]++;
+    labels[best.pid] = best.to;
+    cluster_sizes[best.from]--;
+    cluster_sizes[best.to]++;
 
     ++iteration;
   }
-
+  std::cerr << "Iterations:" << iteration << std::flush;
   return median;
 }
 
@@ -256,38 +322,6 @@ VolumeMedianFitter::remove(PID pid, Label from_label)
   }
 }
 
-Label
-VolumeMedianFitter::select_label(int offset) const
-{
-  std::vector<unsigned int> violations(M);
-
-  for (Label i = 0; i < M; ++i) {
-    unsigned int size = cluster_sizes[i];
-    unsigned int under = (lower_limit[i] > size) ? (lower_limit[i] - size) : 0;
-    unsigned int over = (size > upper_limit[i]) ? (size - upper_limit[i]) : 0;
-    violations[i] = std::max(under, over);
-  }
-
-  auto max_violation = *std::max_element(violations.begin(), violations.end());
-
-  if (max_violation == 0) {
-    // No violations, fallback to round-robin cycling
-    return static_cast<Label>(offset % M);
-  }
-
-  // Rotate violations left by offset
-  std::vector<unsigned int> rotated(M);
-  for (Label i = 0; i < M; ++i) {
-    rotated[i] = violations[(i + offset) % M];
-  }
-
-  auto max_it = std::max_element(rotated.begin(), rotated.end());
-  Label idx_in_rotated =
-    static_cast<Label>(std::distance(rotated.begin(), max_it));
-
-  return static_cast<Label>((offset + idx_in_rotated) % M);
-}
-
 bool
 VolumeMedianFitter::volumes_matched() const
 {
@@ -297,27 +331,6 @@ VolumeMedianFitter::volumes_matched() const
       return false;
   }
   return true;
-}
-
-std::vector<int>
-VolumeMedianFitter::volume_violations() const
-{
-  std::vector<int> violations(M, 0);
-
-  for (Label i = 0; i < M; ++i) {
-    int size = static_cast<int>(cluster_sizes[i]);
-    int lower = static_cast<int>(lower_limit[i]);
-    int upper = static_cast<int>(upper_limit[i]);
-
-    if (size < lower)
-      violations[i] = size - lower; // negative
-    else if (size > upper)
-      violations[i] = size - upper; // positive
-    else
-      violations[i] = 0; // inside range
-  }
-
-  return violations;
 }
 
 }
