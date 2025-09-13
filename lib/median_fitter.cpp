@@ -63,13 +63,16 @@ std::vector<double>
 VolumeMedianFitter::fit()
 {
 
+  /**
+   * @brief Event structure to hold information about a potential flip event
+   */
   struct Event
   {
     double t = std::numeric_limits<double>::infinity();
+    std::vector<double> dir;
     PID pid = 0;
     Label from = 0;
     Label to = 0;
-    std::vector<double> dir;
   };
 
   constexpr unsigned int max_iter = 100000;
@@ -86,31 +89,37 @@ VolumeMedianFitter::fit()
       unsigned int lower_i = lower_limit[i];
       unsigned int upper_i = upper_limit[i];
 
-      const std::vector<double> dir = directions[i];
+      std::vector<double> dir = directions[i];
+
+      Event local_best;
 
       // --- Shrink direction (-i) ---
       if (size_i > lower_i) { // i can give away a point
+        std::vector<double> dir_shrink = dir;
+        for (double& v : dir_shrink)
+          v = -v;
+
         for (Label receiver : other_labels[i]) {
-          unsigned int size_receiver = cluster_sizes[receiver];
-          unsigned int lower_receiver = lower_limit[receiver];
-          unsigned int upper_receiver = upper_limit[receiver];
+          if (auto pid_opt = peek(i, receiver)) {
+            double t = compute_flip_time(*pid_opt, i, receiver);
+            if (t < local_best.t) {
+              local_best.t = t;
+              local_best.dir = dir_shrink;
+              local_best.pid = *pid_opt;
+              local_best.from = i;
+              local_best.to = receiver;
+            }
+          }
+        }
+        if (std::isfinite(local_best.t)) {
+          unsigned int size_receiver = cluster_sizes[local_best.to];
+          unsigned int lower_receiver = lower_limit[local_best.to];
+          unsigned int upper_receiver = upper_limit[local_best.to];
 
           if (size_receiver < upper_receiver &&
               (size_receiver < lower_receiver || size_i > upper_i)) {
-            if (auto pid_opt = peek(i, receiver)) {
-              double t = compute_flip_time(*pid_opt, i, receiver);
-              if (t < best.t) {
-                std::vector<double> dir_shrink = dir;
-                for (double& v : dir_shrink)
-                  v = -v;
-
-                best.t = t;
-                best.pid = *pid_opt;
-                best.from = i;
-                best.to = receiver;
-                best.dir = dir_shrink;
-              }
-            }
+            if (local_best.t < best.t)
+              best = local_best;
           }
         }
       }
@@ -118,22 +127,26 @@ VolumeMedianFitter::fit()
       // --- Grow direction (+i) ---
       if (size_i < upper_i) { // i can receive a point
         for (Label donor : other_labels[i]) {
-          unsigned int size_donor = cluster_sizes[donor];
-          unsigned int lower_donor = lower_limit[donor];
-          unsigned int upper_donor = upper_limit[donor];
+          if (auto pid_opt = peek(donor, i)) {
+            double t = compute_flip_time(*pid_opt, donor, i);
+            if (t < local_best.t) {
+              local_best.t = t;
+              local_best.dir = dir; // grow direction = +i
+              local_best.pid = *pid_opt;
+              local_best.from = donor;
+              local_best.to = i;
+            }
+          }
+        }
+        if (std::isfinite(local_best.t)) {
+          unsigned int size_donor = cluster_sizes[local_best.from];
+          unsigned int lower_donor = lower_limit[local_best.from];
+          unsigned int upper_donor = upper_limit[local_best.from];
 
           if (size_donor > lower_donor &&
               (size_donor > upper_donor || size_i < lower_i)) {
-            if (auto pid_opt = peek(donor, i)) {
-              double t = compute_flip_time(*pid_opt, donor, i);
-              if (t < best.t) {
-                best.t = t;
-                best.pid = *pid_opt;
-                best.from = donor;
-                best.to = i;
-                best.dir = dir; // grow direction = +i
-              }
-            }
+            if (local_best.t < best.t)
+              best = local_best;
           }
         }
       }
@@ -195,7 +208,7 @@ VolumeMedianFitter::fit()
 
     ++iteration;
   }
-  std::cerr << "Iterations:" << iteration << std::flush;
+  std::cerr << "Iterations:" << iteration << "\n" << std::flush;
   return median;
 }
 
