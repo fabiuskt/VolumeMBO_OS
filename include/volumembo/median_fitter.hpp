@@ -4,6 +4,7 @@
 #include <volumembo/span2d.hpp>
 
 #include <cstddef>
+#include <limits>
 #include <map>
 #include <optional>
 #include <utility>
@@ -79,6 +80,18 @@ private:
   const std::vector<std::vector<Label>> other_labels; // size M of size M-1
 
   /**
+   * @brief Event structure to hold information about a potential flip event
+   */
+  struct Event
+  {
+    double t = std::numeric_limits<double>::infinity();
+    std::vector<double> dir;
+    PID pid;
+    Label from;
+    Label to;
+  };
+
+  /**
    * @brief Priority queues for managing point IDs based on flip times
    *
    * The priority queues are organized by pairs of labels (from_label,
@@ -97,6 +110,16 @@ private:
    * the point to the cluster whose median is closest to the point.
    */
   void assign_clusters();
+
+  /**
+   * @brief Build a flip chain starting from a given direction
+   *
+   * @param dir The initial direction for the flip chain
+   * @param chain A reference to a vector of Events to store the flip chain
+   *
+   * @return true if the flip chain was successfully built, false otherwise
+   */
+  bool build_flip_chain(std::vector<double> dir, std::vector<Event>& chain);
 
   /**
    * @brief Compute the flip time for a point ID between two labels

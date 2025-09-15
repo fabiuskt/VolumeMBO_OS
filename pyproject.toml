@@ -36,7 +36,7 @@ cmake.version = "CMakeLists.txt"
 ninja.version = ">=1.11"
 
 [tool.scikit-build.cmake.define]
-BUILD_TESTS = "OFF"
+BUILD_TESTS = "ON"
 
 [tool.pre-commit]
 hook-types = ["pre-commit"]

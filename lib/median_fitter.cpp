@@ -59,103 +59,156 @@ VolumeMedianFitter::VolumeMedianFitter(
   initialize_priority_queues();
 }
 
+void
+VolumeMedianFitter::assign_clusters()
+{
+  cluster_sizes.assign(M, 0);
+
+  for (std::size_t i = 0; i < N; ++i) {
+    std::vector<double> u_minus_m = compute_u_minus_m(i);
+    for (unsigned int j = 0; j < M; ++j) {
+      u_minus_m[j] -= median[j];
+    }
+
+    auto max_it = std::max_element(u_minus_m.begin(), u_minus_m.end());
+    Label max_index =
+      static_cast<Label>(std::distance(u_minus_m.begin(), max_it));
+
+    labels[i] = max_index;
+    ++cluster_sizes[max_index];
+  }
+}
+
+bool
+VolumeMedianFitter::build_flip_chain(std::vector<double> dir,
+                                     std::vector<Event>& flip_chain)
+{
+  for (Label i = 0; i < M; ++i) {
+    unsigned int size_i = cluster_sizes[i];
+    unsigned int lower_i = lower_limit[i];
+    unsigned int upper_i = upper_limit[i];
+
+    // --- Grow direction (+i) --- // Add shrink direction?
+    if (size_i < lower_i) { // i receives a point
+      for (Label donor : other_labels[i]) {
+        if (auto pid_opt = peek(donor, i)) {
+          double t = compute_flip_time(*pid_opt, donor, i);
+          if (t < best.t && std::isfinite(t)) {
+            best.t = t;
+            best.dir = dir;
+            best.pid = *pid_opt;
+            best.from = donor;
+            best.to = i;
+          }
+        }
+      }
+      flip_chain.push_back(best);
+    }
+  }
+  if (mismatch_reduced(flip_chain)) {
+    return true;
+  } else {
+    auto new_dir = get_new_direction(flip_chain);
+    return build_flip_chain(new_dir, flip_chain);
+  }
+}
+
+double
+VolumeMedianFitter::compute_flip_time(PID pid,
+                                      Label from_label,
+                                      Label to_label) const
+{
+  std::vector<double> u_minus_m = compute_u_minus_m(pid);
+
+  return (u_minus_m[from_label] - u_minus_m[to_label]) *
+         static_cast<double>(M - 1) / static_cast<double>(M);
+}
+
+std::vector<double>
+VolumeMedianFitter::compute_u_minus_m(std::size_t index) const
+{
+  std::vector<double> u_minus_m(M);
+  for (unsigned int j = 0; j < M; ++j) {
+    u_minus_m[j] = u(index, j) - median[j];
+  }
+  return u_minus_m;
+}
+
 std::vector<double>
 VolumeMedianFitter::fit()
 {
-
-  /**
-   * @brief Event structure to hold information about a potential flip event
-   */
-  struct Event
-  {
-    double t = std::numeric_limits<double>::infinity();
-    std::vector<double> dir;
-    PID pid = 0;
-    Label from = 0;
-    Label to = 0;
-  };
-
   constexpr unsigned int max_iter = 100000;
   unsigned int iteration = 0;
 
+  std::vector<Event> chain;
+
   while (!volumes_matched()) {
+    // Exit if maximum iterations reached
     if (iteration > max_iter)
       break;
 
-    Event best;
+    // Reset the flip chain
+    chain.clear();
 
     for (Label i = 0; i < M; ++i) {
+      // Start with simple direction
+      std::vector<double> dir = directions[i];
+
       unsigned int size_i = cluster_sizes[i];
       unsigned int lower_i = lower_limit[i];
       unsigned int upper_i = upper_limit[i];
 
-      std::vector<double> dir = directions[i];
-
-      Event local_best;
-
-      // --- Shrink direction (-i) ---
-      if (size_i > lower_i) { // i can give away a point
-        std::vector<double> dir_shrink = dir;
-        for (double& v : dir_shrink)
-          v = -v;
-
-        for (Label receiver : other_labels[i]) {
-          if (auto pid_opt = peek(i, receiver)) {
-            double t = compute_flip_time(*pid_opt, i, receiver);
-            if (t < local_best.t) {
-              local_best.t = t;
-              local_best.dir = dir_shrink;
-              local_best.pid = *pid_opt;
-              local_best.from = i;
-              local_best.to = receiver;
-            }
-          }
-        }
-        if (std::isfinite(local_best.t)) {
-          unsigned int size_receiver = cluster_sizes[local_best.to];
-          unsigned int lower_receiver = lower_limit[local_best.to];
-          unsigned int upper_receiver = upper_limit[local_best.to];
-
-          if (size_receiver < upper_receiver &&
-              (size_receiver < lower_receiver || size_i > upper_i)) {
-            if (local_best.t < best.t)
-              best = local_best;
-          }
-        }
-      }
-
       // --- Grow direction (+i) ---
-      if (size_i < upper_i) { // i can receive a point
+      if (size_i < lower_i) { // i receives a point
         for (Label donor : other_labels[i]) {
           if (auto pid_opt = peek(donor, i)) {
             double t = compute_flip_time(*pid_opt, donor, i);
-            if (t < local_best.t) {
-              local_best.t = t;
-              local_best.dir = dir; // grow direction = +i
-              local_best.pid = *pid_opt;
-              local_best.from = donor;
-              local_best.to = i;
+            if (t < best.t) {
+              best.t = t;
+              best.dir = dir;
+              best.pid = *pid_opt;
+              best.from = donor;
+              best.to = i;
             }
           }
         }
-        if (std::isfinite(local_best.t)) {
-          unsigned int size_donor = cluster_sizes[local_best.from];
-          unsigned int lower_donor = lower_limit[local_best.from];
-          unsigned int upper_donor = upper_limit[local_best.from];
+        chain.push_back(best);
+        unsigned int size_donor = cluster_sizes[best.from];
+        unsigned int lower_donor = lower_limit[best.from];
+        unsigned int upper_donor = upper_limit[best.from];
 
-          if (size_donor > lower_donor &&
-              (size_donor > upper_donor || size_i < lower_i)) {
-            if (local_best.t < best.t)
-              best = local_best;
-          }
+        // Move median
+
+        if (size_donor >
+            lower_donor) { // This needs to include the hypothetical flips of
+                           // the chain, which could be length zero
+          // Perform flip chain (i.e., update clusters and priority queues) and
+          // continue
+        } else {
+          // Push event to chain, set new direction (d_from + d_to), call this
+          // function recursively
+          // std::set<std::pair<Label, Label>> frozen_hyperplanes;
         }
       }
     }
 
-    if (!std::isfinite(best.t)) {
-      throw std::runtime_error(
-        "fit() failed: no valid flip found at iteration " +
-        std::to_string(iteration));
+    if (std::isfinite(best.t)) {
+      // Update median
+      for (unsigned int j = 0; j < M; ++j) {
+        median[j] += best.t * best.dir[j];
+      }
+
+      // Update queues
+      remove(best.pid, best.from);
+      insert_into_queues(best.pid, best.to);
+
+      // Update clusters
+      labels[best.pid] = best.to;
+      cluster_sizes[best.from]--;
+      cluster_sizes[best.to]++;
+
+      ++iteration;
+      continue;
     }
 
     // Update median
@@ -210,47 +263,6 @@ VolumeMedianFitter::fit()
   }
   std::cerr << "Iterations:" << iteration << "\n" << std::flush;
   return median;
-}
-
-void
-VolumeMedianFitter::assign_clusters()
-{
-  cluster_sizes.assign(M, 0);
-
-  for (std::size_t i = 0; i < N; ++i) {
-    std::vector<double> u_minus_m = compute_u_minus_m(i);
-    for (unsigned int j = 0; j < M; ++j) {
-      u_minus_m[j] -= median[j];
-    }
-
-    auto max_it = std::max_element(u_minus_m.begin(), u_minus_m.end());
-    Label max_index =
-      static_cast<Label>(std::distance(u_minus_m.begin(), max_it));
-
-    labels[i] = max_index;
-    ++cluster_sizes[max_index];
-  }
-}
-
-double
-VolumeMedianFitter::compute_flip_time(PID pid,
-                                      Label from_label,
-                                      Label to_label) const
-{
-  std::vector<double> u_minus_m = compute_u_minus_m(pid);
-
-  return (u_minus_m[from_label] - u_minus_m[to_label]) *
-         static_cast<double>(M - 1) / static_cast<double>(M);
-}
-
-std::vector<double>
-VolumeMedianFitter::compute_u_minus_m(std::size_t index) const
-{
-  std::vector<double> u_minus_m(M);
-  for (unsigned int j = 0; j < M; ++j) {
-    u_minus_m[j] = u(index, j) - median[j];
-  }
-  return u_minus_m;
 }
 
 void
