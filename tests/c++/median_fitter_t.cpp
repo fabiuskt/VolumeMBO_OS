@@ -74,7 +74,7 @@ TEST_CASE("Fit median 3D")
 
   SECTION("3D Grow cluster 0")
   {
-    // Example u matrix: 6 points in 3D space (flattened row-major)
+    // Example u matrix: 9 points in 3D space (flattened row-major)
     const std::vector<double> u = {
       0.8, 0.1, 0.1, 0.7, 0.2, 0.1, 0.6, 0.3, 0.1, 0.1, 0.7, 0.2, 0.2, 0.6,
       0.2, 0.3, 0.1, 0.6, 0.4, 0.1, 0.5, 0.1, 0.2, 0.7, 0.1, 0.1, 0.8

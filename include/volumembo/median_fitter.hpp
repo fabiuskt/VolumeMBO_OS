@@ -7,6 +7,7 @@
 #include <limits>
 #include <map>
 #include <optional>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -103,6 +104,14 @@ private:
     priority_queues;
 
   /**
+   * @brief Apply a sequence of flip events to update the median and clusters
+   *
+   * @param chain A vector of flip events representing the sequence of flips to
+   * apply
+   */
+  void apply_flip_chain(const std::vector<Event>& chain);
+
+  /**
    * @brief Assign clusters based on the current median
    *
    * This method updates the labels of each point based on the current median.
@@ -114,12 +123,14 @@ private:
   /**
    * @brief Build a flip chain starting from a given direction
    *
-   * @param dir The initial direction for the flip chain
-   * @param chain A reference to a vector of Events to store the flip chain
+   * @param flip_chain A vector to hold the sequence of flip events
+   * @param frozen_hyperplanes A set of labels representing the frozen
+   * hyperplanes
    *
-   * @return true if the flip chain was successfully built, false otherwise
+   * @return true if a valid flip chain was built, false otherwise
    */
-  bool build_flip_chain(std::vector<double> dir, std::vector<Event>& chain);
+  bool build_flip_chain(std::vector<Event>& flip_chain,
+                        std::unordered_set<Label>& frozen_hyperplanes);
 
   /**
    * @brief Compute the flip time for a point ID between two labels
@@ -143,6 +154,16 @@ private:
   std::vector<double> compute_u_minus_m(std::size_t index) const;
 
   /**
+   * @brief Generate a vector of pairs of labels from a given subset of frozen
+   * hyperplanes
+   * @param subset A set of labels representing the frozen hyperplanes
+   *
+   * @return A vector of pairs of labels representing all unique pairs formed by
+   */
+  std::vector<std::pair<Label, Label>> generate_cross_pairs(
+    const std::unordered_set<unsigned>& subset);
+
+  /**
    * @brief Initialize the priority queues for all label pairs
    *
    * This method sets up the priority queues for each pair of labels
@@ -158,6 +179,15 @@ private:
    * @param from_label The label from which the flip is considered
    */
   void insert_into_queues(PID pid, Label from_label);
+
+  /**
+   * @brief Check if the mismatch in cluster sizes is reduced by the flip chain
+   *
+   * @param flip_chain A vector of flip events representing the flip chain
+   *
+   * @return true if the mismatch is reduced, false otherwise
+   */
+  bool mismatch_reduced(const std::vector<Event>& flip_chain) const;
 
   /**
    * @brief Peek at the top element of the priority queue for a given label pair
