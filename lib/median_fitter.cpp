@@ -117,13 +117,7 @@ VolumeMedianFitter::build_flip_chain(std::vector<Event>& flip_chain,
     frozen_hyperplanes.generate_cross_pairs();
 
   // Define direction as sum of directions of frozen hyperplanes
-  std::vector<double> dir(M, 0.0);
-  for (Label label : frozen_hyperplanes.frozen) {
-    for (std::size_t j = 0; j < M; ++j) {
-      dir[j] -= directions[label][j]; // + for growing, - for shrinking
-    }
-    printf("dir = (%g,%g,%g)\n", dir[0], dir[1], dir[2]);
-  }
+  std::vector<double> dir = frozen_hyperplanes.generate_direction(directions);
 
   // Loop through possible pairs of flip labels
   Event best;

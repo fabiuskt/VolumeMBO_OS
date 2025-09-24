@@ -100,17 +100,34 @@ private:
    */
   struct FrozenHyperplanes
   {
+    const unsigned int M;
     std::vector<Label> frozen;
     std::vector<Label> complement;
 
-    FrozenHyperplanes(std::vector<Label> frozen_labels, unsigned int M)
-      : frozen(std::move(frozen_labels))
+    FrozenHyperplanes(std::vector<Label> frozen_labels, unsigned int M_)
+      : M(M_)
+      , frozen(std::move(frozen_labels))
     {
       complement.reserve(M - frozen.size());
       for (Label i = 0; i < static_cast<Label>(M); ++i) {
         if (std::find(frozen.begin(), frozen.end(), i) == frozen.end()) {
           complement.push_back(i);
         }
+      }
+    }
+
+    /**
+     * @brief Insert new label into frozen set and update complement
+     *
+     * @param label The label to be added to the frozen set
+     */
+    void freeze(Label label)
+    {
+      frozen.push_back(label);
+      // Remove from complement
+      auto it = std::find(complement.begin(), complement.end(), label);
+      if (it != complement.end()) {
+        complement.erase(it);
       }
     }
 
@@ -134,18 +151,23 @@ private:
     }
 
     /**
-     * @brief Insert new label into frozen set and update complement
+     * @brief Generate the direction vector based on the frozen hyperplanes
      *
-     * @param label The label to be added to the frozen set
+     * @param directions A vector of vectors containing the direction for each
+     * cluster
+     *
+     * @return A vector of doubles representing the direction
      */
-    void freeze(Label label)
+    std::vector<double> generate_direction(
+      const std::vector<std::vector<double>>& directions) const
     {
-      frozen.push_back(label);
-      // Remove from complement
-      auto it = std::find(complement.begin(), complement.end(), label);
-      if (it != complement.end()) {
-        complement.erase(it);
+      std::vector<double> dir(M);
+      for (Label label : frozen) {
+        for (std::size_t j = 0; j < M; ++j) {
+          dir[j] -= directions[label][j]; // + for growing, - for shrinking
+        }
       }
+      return dir;
     }
   };
 
