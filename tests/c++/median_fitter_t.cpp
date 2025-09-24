@@ -28,6 +28,9 @@ TEST_CASE("Fit median 2D")
 
     std::vector<double> result = fitter.fit();
 
+    // Check result size
+    REQUIRE(result.size() == M);
+
     // Check that each entry is in [0, 1]
     for (double val : result) {
       REQUIRE(val >= 0.0);
@@ -51,6 +54,9 @@ TEST_CASE("Fit median 2D")
 
     std::vector<double> result = fitter.fit();
 
+    // Check result size
+    REQUIRE(result.size() == M);
+
     // Check that each entry is in [0, 1]
     for (double val : result) {
       REQUIRE(val >= 0.0);
@@ -68,22 +74,25 @@ TEST_CASE("Fit median 3D")
   constexpr unsigned int N = 9; // number of points
   constexpr unsigned int M = 3; // number of clusters
 
-  // Lower and upper limits
-  const std::vector<unsigned int> lower_limit = { 3, 3, 3 };
-  const std::vector<unsigned int> upper_limit = { 3, 3, 3 };
+  // Example u matrix: 9 points in 3D space (flattened row-major)
+  const std::vector<double> u = { 0.8, 0.1, 0.1, 0.7, 0.2, 0.1, 0.6, 0.3, 0.1,
+                                  0.1, 0.7, 0.2, 0.2, 0.6, 0.2, 0.3, 0.1, 0.6,
+                                  0.4, 0.1, 0.5, 0.1, 0.2, 0.7, 0.1, 0.1, 0.8 };
 
-  SECTION("3D Grow cluster 0")
+  volumembo::Span2D<const double> u_span(u, N, M);
+
+  SECTION("3D Shrink cluster C")
   {
-    // Example u matrix: 9 points in 3D space (flattened row-major)
-    const std::vector<double> u = {
-      0.8, 0.1, 0.1, 0.7, 0.2, 0.1, 0.6, 0.3, 0.1, 0.1, 0.7, 0.2, 0.2, 0.6,
-      0.2, 0.3, 0.1, 0.6, 0.4, 0.1, 0.5, 0.1, 0.2, 0.7, 0.1, 0.1, 0.8
-    };
+    // Lower and upper limits
+    const std::vector<unsigned int> lower_limit = { 3, 3, 3 };
+    const std::vector<unsigned int> upper_limit = { 3, 3, 3 };
 
-    volumembo::Span2D<const double> u_span(u, N, M);
     volumembo::VolumeMedianFitter fitter(u_span, lower_limit, upper_limit);
 
     std::vector<double> result = fitter.fit();
+
+    // Check result size
+    REQUIRE(result.size() == M);
 
     // Check that each entry is in [0, 1]
     for (double val : result) {
@@ -94,5 +103,35 @@ TEST_CASE("Fit median 3D")
     // Check that the sum is approximately 1.0
     double sum = std::accumulate(result.begin(), result.end(), 0.0);
     REQUIRE_THAT(sum, Catch::Matchers::WithinRel(1.0, 1e-8));
+  }
+
+  SECTION("3D Don't do anything")
+  {
+    // Lower and upper limits
+    const std::vector<unsigned int> lower_limit = { 3, 3, 3 };
+    const std::vector<unsigned int> upper_limit = { 3, 3, 4 };
+
+    volumembo::VolumeMedianFitter fitter(u_span, lower_limit, upper_limit);
+
+    std::vector<double> result = fitter.fit();
+
+    // Check result size
+    REQUIRE(result.size() == M);
+
+    // Check that each entry is in [0, 1]
+    for (double val : result) {
+      REQUIRE(val >= 0.0);
+      REQUIRE(val <= 1.0);
+    }
+
+    // Check that the sum is approximately 1.0
+    double sum = std::accumulate(result.begin(), result.end(), 0.0);
+    REQUIRE_THAT(sum, Catch::Matchers::WithinRel(1.0, 1e-8));
+
+    // Check that the result is approximately (1/3, 1/3, 1/3)
+    for (double val : result) {
+      REQUIRE_THAT(
+        val, Catch::Matchers::WithinRel(1.0 / static_cast<double>(M), 1e-8));
+    }
   }
 }
