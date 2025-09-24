@@ -92,6 +92,19 @@ private:
   };
 
   /**
+   * @brief Specifies whether the current flip logic is in growth or shrinkage
+   * mode. Used in flip-chain construction to determine direction of movement
+   * and which cluster (frozen vs complement) is donor or receiver.
+   */
+  enum class Mode
+  {
+    Grow,  ///< Flip logic grows the initially selected cluster (receives
+           ///< points).
+    Shrink ///< Flip logic shrinks the initially selected cluster (gives away
+           ///< points).
+  };
+
+  /**
    * @brief Structure to manage frozen hyperplanes during flip chain building
    *
    * This structure keeps track of the set of frozen hyperplanes and their
@@ -100,18 +113,35 @@ private:
    */
   struct FrozenHyperplanes
   {
+    Mode mode;
     const unsigned int M;
     std::vector<Label> frozen;
     std::vector<Label> complement;
+    const std::vector<std::vector<double>>& directions;
+    std::vector<double> dir;
 
-    FrozenHyperplanes(std::vector<Label> frozen_labels, unsigned int M_)
-      : M(M_)
+    FrozenHyperplanes(Mode mode_,
+                      std::vector<Label> frozen_labels,
+                      const std::vector<std::vector<double>>& directions_,
+                      unsigned int M_)
+      : mode(mode_)
       , frozen(std::move(frozen_labels))
+      , directions(directions_)
+      , M(M_)
+      , dir(M_)
     {
+      // Initialize complement
       complement.reserve(M - frozen.size());
       for (Label i = 0; i < static_cast<Label>(M); ++i) {
         if (std::find(frozen.begin(), frozen.end(), i) == frozen.end()) {
           complement.push_back(i);
+        }
+      }
+
+      // Initialize direction
+      for (Label label : frozen) {
+        for (std::size_t j = 0; j < M; ++j) {
+          dir[j] -= directions[label][j]; // + for growing, - for shrinking
         }
       }
     }
@@ -141,10 +171,14 @@ private:
      */
     std::vector<std::pair<Label, Label>> generate_cross_pairs() const
     {
+      const std::vector<Label>& from =
+        (mode == Mode::Grow) ? complement : frozen;
+      const std::vector<Label>& to = (mode == Mode::Grow) ? frozen : complement;
+
       std::vector<std::pair<Label, Label>> result;
-      for (Label f : frozen) {
-        for (Label c : complement) {
-          result.emplace_back(f, c);
+      for (Label f : from) {
+        for (Label t : to) {
+          result.emplace_back(f, t);
         }
       }
       return result;

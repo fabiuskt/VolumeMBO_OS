@@ -81,7 +81,7 @@ TEST_CASE("Fit median 3D")
 
   volumembo::Span2D<const double> u_span(u, N, M);
 
-  SECTION("3D Shrink cluster C")
+  SECTION("3D Grow cluster B")
   {
     // Lower and upper limits
     const std::vector<unsigned int> lower_limit = { 3, 3, 3 };
@@ -105,11 +105,35 @@ TEST_CASE("Fit median 3D")
     REQUIRE_THAT(sum, Catch::Matchers::WithinRel(1.0, 1e-8));
   }
 
+  SECTION("3D Shrink cluster C")
+  {
+    // Lower and upper limits
+    const std::vector<unsigned int> lower_limit = { 3, 2, 3 };
+    const std::vector<unsigned int> upper_limit = { 4, 3, 3 };
+
+    volumembo::VolumeMedianFitter fitter(u_span, lower_limit, upper_limit);
+
+    std::vector<double> result = fitter.fit();
+
+    // Check result size
+    REQUIRE(result.size() == M);
+
+    // Check that each entry is in [0, 1]
+    for (double val : result) {
+      REQUIRE(val >= 0.0);
+      REQUIRE(val <= 1.0);
+    }
+
+    // Check that the sum is approximately 1.0
+    double sum = std::accumulate(result.begin(), result.end(), 0.0);
+    REQUIRE_THAT(sum, Catch::Matchers::WithinRel(1.0, 1e-8));
+  }
+
   SECTION("3D Don't do anything")
   {
     // Lower and upper limits
-    const std::vector<unsigned int> lower_limit = { 3, 3, 3 };
-    const std::vector<unsigned int> upper_limit = { 3, 3, 4 };
+    const std::vector<unsigned int> lower_limit = { 3, 2, 3 };
+    const std::vector<unsigned int> upper_limit = { 3, 2, 4 };
 
     volumembo::VolumeMedianFitter fitter(u_span, lower_limit, upper_limit);
 

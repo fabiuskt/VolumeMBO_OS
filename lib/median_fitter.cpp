@@ -116,19 +116,15 @@ VolumeMedianFitter::build_flip_chain(std::vector<Event>& flip_chain,
   std::vector<std::pair<Label, Label>> label_pairs =
     frozen_hyperplanes.generate_cross_pairs();
 
-  // Define direction as sum of directions of frozen hyperplanes
-  std::vector<double> dir = frozen_hyperplanes.generate_direction(directions);
-
   // Loop through possible pairs of flip labels
   Event best;
-  // for (const auto& [receiver, donor] : label_pairs) { // when growing
-  for (const auto& [donor, receiver] : label_pairs) { // when shrinking
+  for (const auto& [donor, receiver] : label_pairs) {
     printf("Checking pair (%u, %u)\n", donor, receiver);
     if (auto pid_opt = peek(donor, receiver)) {
       double t = compute_flip_time(*pid_opt, donor, receiver);
       if (t < best.t && std::isfinite(t)) {
         best.t = t;
-        best.dir = dir;
+        best.dir = frozen_hyperplanes.generate_direction(directions);
         best.pid = *pid_opt;
         best.from = donor;
         best.to = receiver;
@@ -189,6 +185,7 @@ VolumeMedianFitter::fit()
       /*
             // --- Grow direction (+i) ---
             if (size_i < lower_i) { // i receives a point
+            Mode mode = Mode::Grow;
               Event best;
               for (Label donor : other_labels[i]) {
                 if (auto pid_opt = peek(donor, i)) {
@@ -231,7 +228,8 @@ VolumeMedianFitter::fit()
                 std::vector<Event> flip_chain = { best };
 
                 // Define initial set of frozen hyperplanes
-                FrozenHyperplanes frozen_hyperplanes({best.from, best.to}, M);
+                FrozenHyperplanes frozen_hyperplanes(mode, {best.from, best.to},
+         directions, M);
 
 
                 bool flip_chain_build =
@@ -253,6 +251,7 @@ VolumeMedianFitter::fit()
       */
       // --- Shrink direction (-i) ---
       if (size_i > upper_i) { // i gives a point
+        Mode mode = Mode::Shrink;
         std::vector<double> dir_shrink = dir;
         for (unsigned int j = 0; j < M; ++j) {
           dir_shrink[j] = -dir[j];
@@ -298,7 +297,8 @@ VolumeMedianFitter::fit()
           std::vector<Event> flip_chain = { best };
 
           // Define initial set of frozen hyperplanes
-          FrozenHyperplanes frozen_hyperplanes({ best.from, best.to }, M);
+          FrozenHyperplanes frozen_hyperplanes(
+            mode, { best.from, best.to }, directions, M);
           printf("test 0\n");
 
           bool flip_chain_build =
