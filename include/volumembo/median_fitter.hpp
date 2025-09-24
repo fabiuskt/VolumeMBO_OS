@@ -119,6 +119,7 @@ private:
     std::vector<Label> complement;
     const std::vector<std::vector<double>>& directions;
     std::vector<double> dir;
+    int sign = 1;
 
     FrozenHyperplanes(Mode mode_,
                       std::vector<Label> frozen_labels,
@@ -138,10 +139,13 @@ private:
         }
       }
 
+      // Set sign based on mode
+      sign = (mode == Mode::Grow) ? 1 : -1;
+
       // Initialize direction
       for (Label label : frozen) {
         for (std::size_t j = 0; j < M; ++j) {
-          dir[j] -= directions[label][j]; // + for growing, - for shrinking
+          dir[j] += static_cast<double>(sign) * directions[label][j];
         }
       }
     }
@@ -158,6 +162,11 @@ private:
       auto it = std::find(complement.begin(), complement.end(), label);
       if (it != complement.end()) {
         complement.erase(it);
+      }
+
+      // Update direction
+      for (std::size_t j = 0; j < M; ++j) {
+        dir[j] += static_cast<double>(sign) * directions[label][j];
       }
     }
 
@@ -185,24 +194,11 @@ private:
     }
 
     /**
-     * @brief Generate the direction vector based on the frozen hyperplanes
-     *
-     * @param directions A vector of vectors containing the direction for each
-     * cluster
+     * @brief Get the current direction vector
      *
      * @return A vector of doubles representing the direction
      */
-    std::vector<double> generate_direction(
-      const std::vector<std::vector<double>>& directions) const
-    {
-      std::vector<double> dir(M);
-      for (Label label : frozen) {
-        for (std::size_t j = 0; j < M; ++j) {
-          dir[j] -= directions[label][j]; // + for growing, - for shrinking
-        }
-      }
-      return dir;
-    }
+    std::vector<double> get_direction() const { return dir; }
   };
 
   /**
