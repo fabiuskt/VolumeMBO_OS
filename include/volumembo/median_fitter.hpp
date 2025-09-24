@@ -7,7 +7,6 @@
 #include <limits>
 #include <map>
 #include <optional>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -93,6 +92,64 @@ private:
   };
 
   /**
+   * @brief Structure to manage frozen hyperplanes during flip chain building
+   *
+   * This structure keeps track of the set of frozen hyperplanes and their
+   * complement. It provides methods to generate cross pairs of labels and to
+   * update the frozen set.
+   */
+  struct FrozenHyperplanes
+  {
+    std::vector<Label> frozen;
+    std::vector<Label> complement;
+
+    FrozenHyperplanes(std::vector<Label> frozen_labels, unsigned int M)
+      : frozen(std::move(frozen_labels))
+    {
+      complement.reserve(M - frozen.size());
+      for (Label i = 0; i < static_cast<Label>(M); ++i) {
+        if (std::find(frozen.begin(), frozen.end(), i) == frozen.end()) {
+          complement.push_back(i);
+        }
+      }
+    }
+
+    /**
+     * @brief Generate a vector of pairs of labels from a given subset of frozen
+     * hyperplanes
+     * @param subset A set of labels representing the frozen hyperplanes
+     *
+     * @return A vector of pairs of labels representing all unique pairs formed
+     * by
+     */
+    std::vector<std::pair<Label, Label>> generate_cross_pairs() const
+    {
+      std::vector<std::pair<Label, Label>> result;
+      for (Label f : frozen) {
+        for (Label c : complement) {
+          result.emplace_back(f, c);
+        }
+      }
+      return result;
+    }
+
+    /**
+     * @brief Insert new label into frozen set and update complement
+     *
+     * @param label The label to be added to the frozen set
+     */
+    void freeze(Label label)
+    {
+      frozen.push_back(label);
+      // Remove from complement
+      auto it = std::find(complement.begin(), complement.end(), label);
+      if (it != complement.end()) {
+        complement.erase(it);
+      }
+    }
+  };
+
+  /**
    * @brief Priority queues for managing point IDs based on flip times
    *
    * The priority queues are organized by pairs of labels (from_label,
@@ -130,7 +187,7 @@ private:
    * @return true if a valid flip chain was built, false otherwise
    */
   bool build_flip_chain(std::vector<Event>& flip_chain,
-                        std::unordered_set<Label>& frozen_hyperplanes);
+                        FrozenHyperplanes& frozen_hyperplanes);
 
   /**
    * @brief Compute the flip time for a point ID between two labels
@@ -152,16 +209,6 @@ private:
    * point and the current median
    */
   std::vector<double> compute_u_minus_m(std::size_t index) const;
-
-  /**
-   * @brief Generate a vector of pairs of labels from a given subset of frozen
-   * hyperplanes
-   * @param subset A set of labels representing the frozen hyperplanes
-   *
-   * @return A vector of pairs of labels representing all unique pairs formed by
-   */
-  std::vector<std::pair<Label, Label>> generate_cross_pairs(
-    const std::unordered_set<unsigned>& subset);
 
   /**
    * @brief Initialize the priority queues for all label pairs

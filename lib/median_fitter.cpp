@@ -14,7 +14,6 @@
 #include <stdexcept>
 #include <string>
 #include <tuple>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -110,17 +109,16 @@ VolumeMedianFitter::assign_clusters()
 }
 
 bool
-VolumeMedianFitter::build_flip_chain(
-  std::vector<Event>& flip_chain,
-  std::unordered_set<Label>& frozen_hyperplanes)
+VolumeMedianFitter::build_flip_chain(std::vector<Event>& flip_chain,
+                                     FrozenHyperplanes& frozen_hyperplanes)
 {
   // Get pairs of possible flip labels
   std::vector<std::pair<Label, Label>> label_pairs =
-    generate_cross_pairs(frozen_hyperplanes);
+    frozen_hyperplanes.generate_cross_pairs();
 
   // Define direction as sum of directions of frozen hyperplanes
   std::vector<double> dir(M, 0.0);
-  for (Label label : frozen_hyperplanes) {
+  for (Label label : frozen_hyperplanes.frozen) {
     for (std::size_t j = 0; j < M; ++j) {
       dir[j] -= directions[label][j]; // + for growing, - for shrinking
     }
@@ -150,7 +148,7 @@ VolumeMedianFitter::build_flip_chain(
     return true;
   } else {
     printf("Mismatched not reduced.\n");
-    frozen_hyperplanes.insert(best.from);
+    frozen_hyperplanes.freeze(best.from);
     return build_flip_chain(flip_chain, frozen_hyperplanes);
   }
 }
@@ -239,8 +237,8 @@ VolumeMedianFitter::fit()
                 std::vector<Event> flip_chain = { best };
 
                 // Define initial set of frozen hyperplanes
-                std::unordered_set<Label> frozen_hyperplanes = { best.from,
-         best.to }; printf("test 0\n");
+                FrozenHyperplanes frozen_hyperplanes({best.from, best.to}, M);
+
 
                 bool flip_chain_build =
                   build_flip_chain(flip_chain, frozen_hyperplanes);
@@ -259,7 +257,7 @@ VolumeMedianFitter::fit()
               }
             }
       */
-      // --- Skrink direction (-i) ---
+      // --- Shrink direction (-i) ---
       if (size_i > upper_i) { // i gives a point
         std::vector<double> dir_shrink = dir;
         for (unsigned int j = 0; j < M; ++j) {
@@ -306,7 +304,7 @@ VolumeMedianFitter::fit()
           std::vector<Event> flip_chain = { best };
 
           // Define initial set of frozen hyperplanes
-          std::unordered_set<Label> frozen_hyperplanes = { best.from, best.to };
+          FrozenHyperplanes frozen_hyperplanes({ best.from, best.to }, M);
           printf("test 0\n");
 
           bool flip_chain_build =
@@ -330,34 +328,13 @@ VolumeMedianFitter::fit()
     ++iteration;
   }
   std::cerr << "Iterations:" << iteration << "\n" << std::flush;
+
+  printf("m = (");
   for (unsigned int i = 0; i < M; ++i) {
-    printf("m = (%g,%g,%g)\n", median[0], median[1], median[2]);
+    printf("%g, ", median[i]);
   }
+  printf(")\n");
   return median;
-}
-
-std::vector<std::pair<Label, Label>>
-VolumeMedianFitter::generate_cross_pairs(
-  const std::unordered_set<unsigned int>& subset)
-{
-  std::vector<std::pair<Label, Label>> result;
-
-  // Build complement explicitly
-  std::vector<Label> complement;
-  complement.reserve(M - subset.size());
-  for (unsigned int i = 0; i < M; ++i) {
-    if (!subset.count(i))
-      complement.push_back(i);
-  }
-
-  // Cross product: every element of subset with every element of complement
-  for (unsigned int s : subset) {
-    for (unsigned int c : complement) {
-      result.emplace_back(s, c);
-    }
-  }
-
-  return result;
 }
 
 void
