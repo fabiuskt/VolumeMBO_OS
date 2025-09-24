@@ -117,7 +117,7 @@ private:
     const unsigned int M;
     std::vector<Label> frozen;
     std::vector<Label> complement;
-    const std::vector<std::vector<double>>& directions;
+    const std::vector<std::vector<double>> directions;
     std::vector<double> dir;
     int sign = 1;
 
