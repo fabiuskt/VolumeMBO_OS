@@ -239,7 +239,8 @@ private:
    * @return true if a valid flip chain was built, false otherwise
    */
   bool build_flip_chain(std::vector<Event>& flip_chain,
-                        FrozenHyperplanes& frozen_hyperplanes);
+                        FrozenHyperplanes& frozen_hyperplanes,
+                        unsigned int recursion_level);
 
   /**
    * @brief Compute the flip time for a point ID between two labels
@@ -319,6 +320,12 @@ private:
   */
   static std::vector<std::vector<Label>> precompute_other_labels(
     unsigned int M);
+
+  /**
+   * @brief Print the flip chain for debugging purposes
+   * @param chain A vector of flip events representing the flip chain
+   */
+  void print_flip_chain(const std::vector<Event>& chain);
 
   /**
    * @brief Remove a point ID from all priority queues associated with its label
