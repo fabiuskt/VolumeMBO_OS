@@ -6,19 +6,13 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
-#include <cstdio>
-#include <iostream>
 #include <iterator>
 #include <limits>
-#include <map>
 #include <optional>
 #include <stdexcept>
 #include <string>
-#include <tuple>
 #include <utility>
 #include <vector>
-
-#include <sstream>
 
 namespace volumembo {
 
@@ -61,9 +55,9 @@ VolumeMedianFitter::VolumeMedianFitter(
 }
 
 void
-VolumeMedianFitter::apply_flip_chain(const std::vector<Event>& chain)
+VolumeMedianFitter::apply_flip_chain(const std::vector<FlipEvent>& chain)
 {
-  for (const Event& event : chain) {
+  for (const FlipEvent& event : chain) {
     /*
         // Update median
         for (unsigned int j = 0; j < M; ++j) {
@@ -71,13 +65,13 @@ VolumeMedianFitter::apply_flip_chain(const std::vector<Event>& chain)
         }
     */
     // Update priority queues
-    remove(event.pid, event.from);
-    insert_into_queues(event.pid, event.to);
+    remove(event.pid, event.donor);
+    insert_into_queues(event.pid, event.receiver);
 
     // Update cluster labels and sizes
-    labels[event.pid] = event.to;
-    cluster_sizes[event.from]--;
-    cluster_sizes[event.to]++;
+    labels[event.pid] = event.receiver;
+    cluster_sizes[event.donor]--;
+    cluster_sizes[event.receiver]++;
   }
 }
 
@@ -102,12 +96,14 @@ VolumeMedianFitter::assign_clusters()
 }
 
 bool
-VolumeMedianFitter::build_flip_chain(std::vector<Event>& flip_chain,
+VolumeMedianFitter::build_flip_chain(std::vector<FlipEvent>& flip_chain,
                                      FrozenHyperplanes& frozen_hyperplanes,
+                                     std::vector<double>& median_,
                                      unsigned int recursion_level)
 {
   // Limit recursion depth to avoid infinite loops
-  if (recursion_level > M - 1) {
+  if (recursion_level >
+      M - 3) { // flip chain already has one entry when entering this function
     return false;
   }
 
@@ -116,36 +112,34 @@ VolumeMedianFitter::build_flip_chain(std::vector<Event>& flip_chain,
     frozen_hyperplanes.generate_cross_pairs();
 
   // Loop through possible pairs of flip labels
-  Event best;
+  FlipEvent best;
   for (const auto& [donor, receiver] : label_pairs) {
-    // printf("Checking pair (%u, %u)\n", donor, receiver);
+    // printf("Checking pair (%u, %u)\n", donor, receiver);fflush(stdout);
     if (auto pid_opt = peek(donor, receiver)) {
       double t = compute_flip_time(*pid_opt, donor, receiver);
       if (t < best.t && std::isfinite(t)) {
         best.t = t;
         best.dir = frozen_hyperplanes.get_direction();
         best.pid = *pid_opt;
-        best.from = donor;
-        best.to = receiver;
+        best.donor = donor;
+        best.receiver = receiver;
       }
     }
   }
-  printf("Best t = %g (recursion level %u)\n", best.t, recursion_level);
-  fflush(stdout);
+
   flip_chain.push_back(best);
 
   // Update median
   for (unsigned int j = 0; j < M; ++j) {
-    median[j] += best.t * best.dir[j];
+    median_[j] += best.t * best.dir[j];
   }
 
   if (mismatch_reduced(flip_chain)) {
-    // printf("Mismatched reduced.\n");
     return true;
   } else {
-    // printf("Mismatched not reduced.\n");
-    frozen_hyperplanes.freeze(best.from);
-    return build_flip_chain(flip_chain, frozen_hyperplanes, ++recursion_level);
+    frozen_hyperplanes.freeze(best.donor);
+    return build_flip_chain(
+      flip_chain, frozen_hyperplanes, median_, ++recursion_level);
   }
 }
 
@@ -173,17 +167,18 @@ VolumeMedianFitter::compute_u_minus_m(std::size_t index) const
 std::vector<double>
 VolumeMedianFitter::fit()
 {
-  printf("fit()\n");
-  fflush(stdout);
-
   const unsigned int max_iter = N;
   unsigned int iteration = 0;
 
   while (!volumes_matched()) {
     // Exit if maximum iterations reached
-    if (iteration > max_iter)
+    if (iteration > max_iter) {
       throw std::runtime_error("fit() failed: max iteration reached " +
                                std::to_string(iteration));
+    }
+
+    // Flag to indicate if a flip was performed in this iteration
+    bool flip_performed = false;
 
     for (Label i = 0; i < M; ++i) {
       // Determine if cluster i needs to grow or shrink
@@ -200,101 +195,81 @@ VolumeMedianFitter::fit()
       } else {
         continue; // Cluster size is within limits, skip to next cluster
       }
-      // printf("Mode: %g\n", (mode == Mode::Grow) ? 1.0 : -1.0);fflush(stdout);
 
-      Event best;
+      FlipEvent best;
       FrozenHyperplanes frozen_hyperplanes(
         mode,
         { i },
         directions,
-        M); // Careful, only as helper to generate the pairs and direction
+        M); // Careful, here this acts only as helper for generating the pairs
+            // and direction
 
       // Get pairs of possible flip labels
       std::vector<std::pair<Label, Label>> label_pairs =
         frozen_hyperplanes.generate_cross_pairs();
 
       for (const auto& [donor, receiver] : label_pairs) {
-        // printf("Cluster %d - Checking pair (%u, %u)\n", i, donor,
-        // receiver);fflush(stdout);
         if (auto pid_opt = peek(donor, receiver)) {
           double t = compute_flip_time(*pid_opt, donor, receiver);
           if (t < best.t && std::isfinite(t)) {
             best.t = t;
             best.dir = frozen_hyperplanes.get_direction();
             best.pid = *pid_opt;
-            best.from = donor;
-            best.to = receiver;
+            best.donor = donor;
+            best.receiver = receiver;
           }
         }
       }
-      printf("Best t = %g\n", best.t);
-      fflush(stdout);
 
-      // Update median
-      for (unsigned int j = 0; j < M; ++j) {
-        median[j] += best.t * best.dir[j];
-      }
       // Initialize flip chain
-      std::vector<Event> flip_chain = { best };
-      unsigned int size_donor = cluster_sizes[best.from];
-      unsigned int lower_donor = lower_limit[best.from];
-      unsigned int size_receiver = cluster_sizes[best.to];
-      unsigned int upper_receiver = upper_limit[best.to];
+      std::vector<FlipEvent> flip_chain = { best };
+      unsigned int size_donor = cluster_sizes[best.donor];
+      unsigned int lower_donor = lower_limit[best.donor];
+      unsigned int size_receiver = cluster_sizes[best.receiver];
+      unsigned int upper_receiver = upper_limit[best.receiver];
 
       if ((mode == Mode::Grow && size_donor > lower_donor) ||
           (mode == Mode::Shrink && size_receiver < upper_receiver)) {
+        // Update median
+        for (unsigned int j = 0; j < M; ++j) {
+          median[j] += best.t * best.dir[j];
+        }
         apply_flip_chain(flip_chain);
-        printf("Direct flip.\n");
-        fflush(stdout);
-        fflush(stdout);
+        flip_performed = true;
         break;
       } else if (M > 2) {
-        printf("Building chain.\n");
-        fflush(stdout);
 
-        for (std::size_t i = 0; i < M; ++i) {
-          printf("  Cluster sizes[%zu] = %u (limits: %u - %u)\n",
-                 i,
-                 cluster_sizes[i],
-                 lower_limit[i],
-                 upper_limit[i]);
-          fflush(stdout);
+        // Make a copy of the median
+        std::vector<double> median_temp = median;
+        // Update temporary median
+        for (unsigned int j = 0; j < M; ++j) {
+          median_temp[j] += best.t * best.dir[j];
         }
 
         // Re-assign frozen hyperplanes
         FrozenHyperplanes frozen_hyperplanes(
-          mode, { best.from, best.to }, directions, M);
+          mode, { best.donor, best.receiver }, directions, M);
 
         bool flip_chain_build =
-          build_flip_chain(flip_chain, frozen_hyperplanes, 0);
+          build_flip_chain(flip_chain, frozen_hyperplanes, median_temp, 0);
         if (flip_chain_build) {
           apply_flip_chain(flip_chain);
-          print_flip_chain(flip_chain);
+          median = std::move(median_temp);
+          flip_performed = true;
           break;
-        } else {
-          printf("Failed to build flip chain.\n");
-          if (i == M - 1) {
-            // If this was the last cluster to try, we are stuck
-            throw std::runtime_error(
-              "fit() failed: no valid flip or chain found at iteration " +
-              std::to_string(iteration));
-          }
-          continue;
         }
       }
+    }
+    if (!flip_performed) {
+      // If no flip was performed in this iteration, we are stuck
+      throw std::runtime_error(
+        "fit() failed: no valid flip or chain found at iteration " +
+        std::to_string(iteration));
     }
 
     ++iteration;
   }
-  /*
-    std::cerr << "Iterations:" << iteration << "\n" << std::flush;
 
-    printf("m = (");
-    for (unsigned int i = 0; i < M; ++i) {
-      printf("%g, ", median[i]);
-    }
-    printf(")\n");
-  */
   return median;
 }
 
@@ -323,7 +298,8 @@ VolumeMedianFitter::initialize_priority_queues()
 }
 
 bool
-VolumeMedianFitter::mismatch_reduced(const std::vector<Event>& flip_chain) const
+VolumeMedianFitter::mismatch_reduced(
+  const std::vector<FlipEvent>& flip_chain) const
 {
   auto mismatch = [&](const std::vector<unsigned int>& sizes) -> unsigned int {
     unsigned int total = 0;
@@ -343,8 +319,8 @@ VolumeMedianFitter::mismatch_reduced(const std::vector<Event>& flip_chain) const
 
   // Apply flip chain hypothetically
   for (const auto& ev : flip_chain) {
-    current_sizes[ev.from]--;
-    current_sizes[ev.to]++;
+    current_sizes[ev.donor]--;
+    current_sizes[ev.receiver]++;
   }
 
   // Compute mismatch after
@@ -402,22 +378,6 @@ VolumeMedianFitter::precompute_other_labels(unsigned int M)
   }
 
   return other_labels;
-}
-
-void
-VolumeMedianFitter::print_flip_chain(const std::vector<Event>& chain)
-{
-  for (const Event& event : chain) {
-    std::cout << "  PID " << event.pid << ": " << event.from << " → "
-              << event.to << ", t = " << event.t << ", dir = [";
-    for (std::size_t i = 0; i < event.dir.size(); ++i) {
-      std::cout << event.dir[i];
-      if (i < event.dir.size() - 1)
-        std::cout << ", ";
-    }
-    std::cout << "]" << std::endl;
-    std::cout << std::flush;
-  }
 }
 
 void

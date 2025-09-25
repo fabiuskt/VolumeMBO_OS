@@ -3,6 +3,7 @@
 #include <volumembo/priority_queue.hpp>
 #include <volumembo/span2d.hpp>
 
+#include <algorithm>
 #include <cstddef>
 #include <limits>
 #include <map>
@@ -80,18 +81,6 @@ private:
   const std::vector<std::vector<Label>> other_labels; // size M of size M-1
 
   /**
-   * @brief Event structure to hold information about a potential flip event
-   */
-  struct Event
-  {
-    double t = std::numeric_limits<double>::infinity();
-    std::vector<double> dir;
-    PID pid;
-    Label from;
-    Label to;
-  };
-
-  /**
    * @brief Specifies whether the current flip logic is in growth or shrinkage
    * mode. Used in flip-chain construction to determine direction of movement
    * and which cluster (frozen vs complement) is donor or receiver.
@@ -99,9 +88,21 @@ private:
   enum class Mode
   {
     Grow,  ///< Flip logic grows the initially selected cluster (receives
-           ///< points).
+           ///< point).
     Shrink ///< Flip logic shrinks the initially selected cluster (gives away
-           ///< points).
+           ///< point).
+  };
+
+  /**
+   * @brief FlipEvent structure to hold information about a potential flip event
+   */
+  struct FlipEvent
+  {
+    double t = std::numeric_limits<double>::infinity();
+    std::vector<double> dir;
+    PID pid;
+    Label donor;
+    Label receiver;
   };
 
   /**
@@ -218,7 +219,7 @@ private:
    * @param chain A vector of flip events representing the sequence of flips to
    * apply
    */
-  void apply_flip_chain(const std::vector<Event>& chain);
+  void apply_flip_chain(const std::vector<FlipEvent>& chain);
 
   /**
    * @brief Assign clusters based on the current median
@@ -238,8 +239,9 @@ private:
    *
    * @return true if a valid flip chain was built, false otherwise
    */
-  bool build_flip_chain(std::vector<Event>& flip_chain,
+  bool build_flip_chain(std::vector<FlipEvent>& flip_chain,
                         FrozenHyperplanes& frozen_hyperplanes,
+                        std::vector<double>& median_,
                         unsigned int recursion_level);
 
   /**
@@ -287,7 +289,7 @@ private:
    *
    * @return true if the mismatch is reduced, false otherwise
    */
-  bool mismatch_reduced(const std::vector<Event>& flip_chain) const;
+  bool mismatch_reduced(const std::vector<FlipEvent>& flip_chain) const;
 
   /**
    * @brief Peek at the top element of the priority queue for a given label pair
@@ -320,12 +322,6 @@ private:
   */
   static std::vector<std::vector<Label>> precompute_other_labels(
     unsigned int M);
-
-  /**
-   * @brief Print the flip chain for debugging purposes
-   * @param chain A vector of flip events representing the flip chain
-   */
-  void print_flip_chain(const std::vector<Event>& chain);
 
   /**
    * @brief Remove a point ID from all priority queues associated with its label
