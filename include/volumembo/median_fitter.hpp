@@ -115,12 +115,20 @@ private:
   struct FrozenHyperplanes
   {
     Mode mode;
-    const unsigned int M;
+    unsigned int M;
     std::vector<Label> frozen;
     std::vector<Label> complement;
-    const std::vector<std::vector<double>> directions;
+    std::vector<std::vector<double>> directions;
     std::vector<double> dir;
     int sign = 1;
+
+    FrozenHyperplanes()
+      : mode(Mode::Grow)
+      , frozen({})
+      , directions()
+      , M(0)
+    {
+    }
 
     FrozenHyperplanes(Mode mode_,
                       std::vector<Label> frozen_labels,
@@ -129,8 +137,8 @@ private:
       : mode(mode_)
       , frozen(std::move(frozen_labels))
       , directions(directions_)
-      , M(M_)
       , dir(M_)
+      , M(M_)
     {
       // Initialize complement
       complement.reserve(M - frozen.size());
@@ -174,7 +182,6 @@ private:
     /**
      * @brief Generate a vector of pairs of labels from a given subset of frozen
      * hyperplanes
-     * @param subset A set of labels representing the frozen hyperplanes
      *
      * @return A vector of pairs of labels representing all unique pairs formed
      * by
@@ -203,6 +210,130 @@ private:
   };
 
   /**
+   * @brief Structure to represent a chain of flip events
+   *
+   * This structure holds a sequence of flip events that represent a series of
+   * flips to be applied to the clusters.
+   */
+  struct FlipChain
+  {
+    std::vector<FlipEvent> chain;
+    FrozenHyperplanes frozen_hyperplanes;
+    Mode mode;
+    std::vector<double> median;
+    const unsigned int M;
+
+    /**
+     * @brief Constructor for FlipChain without frozen hyperplanes
+     */
+    FlipChain(const FlipEvent& event,
+              const std::vector<double>& median_,
+              Mode mode_,
+              unsigned int M_)
+      : chain{ event }
+      , median(median_)
+      , mode(mode_)
+      , M(M_)
+    {
+      // Update median
+      for (unsigned int i = 0; i < M; ++i) {
+        median[i] += event.t * event.dir[i];
+      }
+    }
+
+    /**
+     * @brief Constructor for FlipChain with frozen hyperplanes
+     */
+    FlipChain(const FlipEvent& event,
+              const std::vector<double>& median_,
+              Mode mode_,
+              Label from,
+              Label to,
+              const std::vector<std::vector<double>>& directions,
+              unsigned int M_)
+      : chain{ event }
+      , median(median_)
+      , frozen_hyperplanes(mode_,
+                           std::vector<Label>{ from, to },
+                           directions,
+                           M_)
+      , mode(mode_)
+      , M(M_)
+    {
+      update_median(event);
+    }
+
+    /**
+     * @brief Add a flip event to the chain and update the median
+     */
+    void add_event(const FlipEvent& event)
+    {
+      chain.push_back(event);
+      update_median(event);
+    }
+
+    /**
+     * @brief Freeze a label in the frozen hyperplanes set
+     */
+    void freeze(Label label) { frozen_hyperplanes.freeze(label); }
+
+    /**
+     * @brief Generate a vector of pairs of labels from the frozen hyperplanes
+     *
+     * @return A vector of pairs of labels representing all unique pairs formed
+     * by
+     */
+    std::vector<std::pair<Label, Label>> generate_cross_pairs() const
+    {
+      return frozen_hyperplanes.generate_cross_pairs();
+    }
+
+    /**
+     * @brief Get the current direction vector from the frozen hyperplanes
+     *
+     * @return A vector of doubles representing the direction
+     */
+    std::vector<double> get_direction() const
+    {
+      return frozen_hyperplanes.get_direction();
+    }
+
+    /**
+     * @brief Get the current median
+     *
+     * @return A vector of doubles representing the current median
+     */
+    std::vector<double> get_median() const { return median; }
+
+    /**
+     * @brief Set frozen hyperplanes for the flip chain
+     *
+     * @param frozen A vector of labels representing the frozen hyperplanes
+     * @param directions A vector of direction vectors for each cluster
+     * @param M The number of clusters
+     */
+    void set_frozen_hyperplanes(
+      std::vector<Label> frozen,
+      const std::vector<std::vector<double>>& directions)
+    {
+      frozen_hyperplanes =
+        FrozenHyperplanes(mode, std::move(frozen), directions, M);
+    }
+
+    /**
+     * @brief Update the median based on a flip event
+     *
+     * @param event The flip event used to update the median
+     */
+    void update_median(const FlipEvent& event)
+    {
+      for (unsigned int i = 0; i < M; ++i) {
+        median[i] += event.t * event.dir[i];
+      }
+    }
+  };
+
+  /**
    * @brief Priority queues for managing point IDs based on flip times
    *
    * The priority queues are organized by pairs of labels (from_label,
@@ -216,10 +347,10 @@ private:
   /**
    * @brief Apply a sequence of flip events to update the median and clusters
    *
-   * @param chain A vector of flip events representing the sequence of flips to
-   * apply
+   * @param flip_chain A vector of flip events representing the sequence of
+   * flips to apply
    */
-  void apply_flip_chain(const std::vector<FlipEvent>& chain);
+  void apply_flip_chain(const FlipChain& flip_chain);
 
   /**
    * @brief Assign clusters based on the current median
@@ -233,16 +364,13 @@ private:
   /**
    * @brief Build a flip chain starting from a given direction
    *
-   * @param flip_chain A vector to hold the sequence of flip events
+   * @param flip_chain The current flip chain to which new events will be added
    * @param frozen_hyperplanes A set of labels representing the frozen
    * hyperplanes
    *
    * @return true if a valid flip chain was built, false otherwise
    */
-  bool build_flip_chain(std::vector<FlipEvent>& flip_chain,
-                        FrozenHyperplanes& frozen_hyperplanes,
-                        std::vector<double>& median_,
-                        unsigned int recursion_level);
+  bool build_flip_chain(FlipChain& flip_chain, unsigned int recursion_level);
 
   /**
    * @brief Compute the flip time for a point ID between two labels
@@ -285,11 +413,11 @@ private:
   /**
    * @brief Check if the mismatch in cluster sizes is reduced by the flip chain
    *
-   * @param flip_chain A vector of flip events representing the flip chain
+   * @param flip_chain The flip chain to evaluate
    *
    * @return true if the mismatch is reduced, false otherwise
    */
-  bool mismatch_reduced(const std::vector<FlipEvent>& flip_chain) const;
+  bool mismatch_reduced(const FlipChain& flip_chain) const;
 
   /**
    * @brief Peek at the top element of the priority queue for a given label pair
