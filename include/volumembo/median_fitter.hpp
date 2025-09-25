@@ -43,6 +43,19 @@ struct FlipTimeComparator
    * @return true if flip time of a is greater than that of b, false otherwise
    */
   bool operator()(int a, int b) const;
+
+  /**
+   * @brief Compare two point IDs based on their flip time
+   *
+   * @param a First point ID
+   * @param b Second point ID
+   * @param median_override Override for the median used in flip time
+   * computation
+   * @return true if flip time of a is greater than that of b, false otherwise
+   */
+  bool operator()(int a,
+                  int b,
+                  const std::vector<double>& median_override) const;
 };
 
 class VolumeMedianFitter
@@ -303,7 +316,7 @@ private:
      *
      * @return A vector of doubles representing the current median
      */
-    std::vector<double> get_median() const { return median; }
+    const std::vector<double>& get_median() const { return median; }
 
     /**
      * @brief Set frozen hyperplanes for the flip chain
@@ -384,6 +397,21 @@ private:
   double compute_flip_time(PID pid, Label from_label, Label to_label) const;
 
   /**
+   * @brief Compute the flip time for a point ID between two labels
+   *
+   * @param pid The point ID for which the flip time is computed
+   * @param from_label The label from which the flip is considered
+   * @param to_label The label to which the flip is considered
+   * @param median_override Override for the median used in flip time
+   *
+   * @return The computed flip time as a double
+   */
+  double compute_flip_time(PID pid,
+                           Label from_label,
+                           Label to_label,
+                           const std::vector<double>& median_override) const;
+
+  /**
    * @brief Compute the difference between the data point and the current median
    *
    * @param index The index of the data point
@@ -392,6 +420,19 @@ private:
    * point and the current median
    */
   std::vector<double> compute_u_minus_m(std::size_t index) const;
+
+  /**
+   * @brief Compute the difference between the data point and the current median
+   *
+   * @param index The index of the data point
+   * @param median_override Override for the median used in computation
+   *
+   * @return A vector of doubles representing the difference between the data
+   * point and the current median
+   */
+  std::vector<double> compute_u_minus_m(
+    std::size_t index,
+    const std::vector<double>& median_override) const;
 
   /**
    * @brief Initialize the priority queues for all label pairs
@@ -429,6 +470,11 @@ private:
    * otherwise std::nullopt
    */
   std::optional<PID> peek(Label from_label, Label to_label);
+
+  /**
+   * @brief Print the flip chain for debugging purposes
+   */
+  void print_flip_chain(const FlipChain& flip_chain);
 
   /**
    * @brief Precompute the directions for each cluster

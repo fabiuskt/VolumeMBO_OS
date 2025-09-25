@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <iostream>
 #include <iterator>
 #include <limits>
 #include <optional>
@@ -30,6 +31,15 @@ FlipTimeComparator::operator()(int a, int b) const
 {
   return parent->compute_flip_time(a, from_label, to_label) >
          parent->compute_flip_time(b, from_label, to_label);
+}
+
+bool
+FlipTimeComparator::operator()(int a,
+                               int b,
+                               const std::vector<double>& median_override) const
+{
+  return parent->compute_flip_time(a, from_label, to_label, median_override) >
+         parent->compute_flip_time(b, from_label, to_label, median_override);
 }
 
 VolumeMedianFitter::VolumeMedianFitter(
@@ -100,6 +110,8 @@ VolumeMedianFitter::build_flip_chain(FlipChain& flip_chain,
   // Limit recursion depth to avoid infinite loops
   if (recursion_level >
       M - 3) { // flip chain already has one entry when entering this function
+    printf("Recursion limit reached\n");
+    fflush(stdout);
     return false;
   }
 
@@ -110,9 +122,15 @@ VolumeMedianFitter::build_flip_chain(FlipChain& flip_chain,
   // Loop through possible pairs of flip labels
   FlipEvent best;
   for (const auto& [donor, receiver] : label_pairs) {
-    // printf("Checking pair (%u, %u)\n", donor, receiver);fflush(stdout);
+    printf("Checking pair (%u, %u)\n", donor, receiver);
+    fflush(stdout);
+    // throw std::runtime_error(
+    //   "INVALID: The priority queues have not been updated wiile building the
+    //   " "lip chain and the flip time computation does not take the
+    //   intermediate " "median values into account. Major bug.");
     if (auto pid_opt = peek(donor, receiver)) {
-      double t = compute_flip_time(*pid_opt, donor, receiver);
+      double t =
+        compute_flip_time(*pid_opt, donor, receiver, flip_chain.get_median());
       if (t < best.t && std::isfinite(t)) {
         best.t = t;
         best.dir = flip_chain.get_direction();
@@ -122,13 +140,21 @@ VolumeMedianFitter::build_flip_chain(FlipChain& flip_chain,
       }
     }
   }
+  printf("Best: (t = %g, PID = %d, %d → %d)\n",
+         best.t,
+         best.pid,
+         best.donor,
+         best.receiver);
+  fflush(stdout);
 
   flip_chain.add_event(best);
 
   if (mismatch_reduced(flip_chain)) {
     return true;
   } else {
-    flip_chain.freeze(best.donor);
+    flip_chain.mode == Mode::Grow
+      ? flip_chain.freeze(best.donor)
+      : flip_chain.freeze(best.receiver); // Why donor?
     return build_flip_chain(flip_chain, recursion_level + 1);
   }
 }
@@ -139,6 +165,19 @@ VolumeMedianFitter::compute_flip_time(PID pid,
                                       Label to_label) const
 {
   std::vector<double> u_minus_m = compute_u_minus_m(pid);
+
+  return (u_minus_m[from_label] - u_minus_m[to_label]) *
+         static_cast<double>(M - 1) / static_cast<double>(M);
+}
+
+double
+VolumeMedianFitter::compute_flip_time(
+  PID pid,
+  Label from_label,
+  Label to_label,
+  const std::vector<double>& median_override) const
+{
+  std::vector<double> u_minus_m = compute_u_minus_m(pid, median_override);
 
   return (u_minus_m[from_label] - u_minus_m[to_label]) *
          static_cast<double>(M - 1) / static_cast<double>(M);
@@ -155,8 +194,22 @@ VolumeMedianFitter::compute_u_minus_m(std::size_t index) const
 }
 
 std::vector<double>
+VolumeMedianFitter::compute_u_minus_m(
+  std::size_t index,
+  const std::vector<double>& median_override) const
+{
+  std::vector<double> u_minus_m(M);
+  for (unsigned int j = 0; j < M; ++j) {
+    u_minus_m[j] = u(index, j) - median_override[j];
+  }
+  return u_minus_m;
+}
+
+std::vector<double>
 VolumeMedianFitter::fit()
 {
+  printf("fit()\n");
+  fflush(stdout);
   const unsigned int max_iter = N;
   unsigned int iteration = 0;
 
@@ -171,18 +224,33 @@ VolumeMedianFitter::fit()
     bool flip_performed = false;
 
     for (Label i = 0; i < M; ++i) {
+      printf("\t Cluster %d:\n", i);
+      fflush(stdout);
       // Determine if cluster i needs to grow or shrink
       Mode mode;
 
       unsigned int size_i = cluster_sizes[i];
       unsigned int lower_i = lower_limit[i];
       unsigned int upper_i = upper_limit[i];
-
+      for (std::size_t k = 0; k < M; ++k) {
+        printf("Cluster sizes[%zu] = %u (limits: %u - %u)\n",
+               k,
+               cluster_sizes[k],
+               lower_limit[k],
+               upper_limit[k]);
+        fflush(stdout);
+      }
       if (size_i < lower_i) { // i receives a point
+        printf("Mode: Grow\n");
+        fflush(stdout);
         mode = Mode::Grow;
       } else if (size_i > upper_i) { // i donates a point
+        printf("Mode: Shrink\n");
+        fflush(stdout);
         mode = Mode::Shrink;
       } else {
+        printf("%d already within targets.\n", i);
+        fflush(stdout);
         continue; // Cluster size is within limits, skip to next cluster
       }
 
@@ -199,6 +267,8 @@ VolumeMedianFitter::fit()
         frozen_hyperplanes.generate_cross_pairs();
 
       for (const auto& [donor, receiver] : label_pairs) {
+        printf("Checking pair (%u, %u)\n", donor, receiver);
+        fflush(stdout);
         if (auto pid_opt = peek(donor, receiver)) {
           double t = compute_flip_time(*pid_opt, donor, receiver);
           if (t < best.t && std::isfinite(t)) {
@@ -210,6 +280,12 @@ VolumeMedianFitter::fit()
           }
         }
       }
+      printf("Best: (t = %g, PID = %d, %d → %d)\n",
+             best.t,
+             best.pid,
+             best.donor,
+             best.receiver);
+      fflush(stdout);
 
       // Initialize flip chain
       FlipChain flip_chain = { best, median, mode, M };
@@ -225,6 +301,8 @@ VolumeMedianFitter::fit()
         flip_performed = true;
         break;
       } else if (M > 2) {
+        printf("Build flip chain:\n");
+        fflush(stdout);
         flip_chain.set_frozen_hyperplanes({ best.donor, best.receiver },
                                           directions);
 
@@ -235,17 +313,22 @@ VolumeMedianFitter::fit()
           break;
         }
       }
+
+      if (i == M - 1 && !flip_performed) {
+        print_flip_chain(flip_chain);
+      }
     }
     if (!flip_performed) {
       // If no flip was performed in this iteration, we are stuck
       throw std::runtime_error(
-        "fit() failed: no valid flip or chain found at iteration " +
+        "fit() failed: no valid flip found at iteration " +
         std::to_string(iteration));
     }
 
     ++iteration;
   }
-
+  printf("\n");
+  fflush(stdout);
   return median;
 }
 
@@ -353,6 +436,22 @@ VolumeMedianFitter::precompute_other_labels(unsigned int M)
   }
 
   return other_labels;
+}
+
+void
+VolumeMedianFitter::print_flip_chain(const FlipChain& flip_chain)
+{
+  for (const FlipEvent& event : flip_chain.chain) {
+    std::cout << "  PID " << event.pid << ": " << event.donor << " → "
+              << event.receiver << ", t = " << event.t << ", dir = [";
+    for (std::size_t i = 0; i < event.dir.size(); ++i) {
+      std::cout << event.dir[i];
+      if (i < event.dir.size() - 1)
+        std::cout << ", ";
+    }
+    std::cout << "]" << std::endl;
+    std::cout << std::flush;
+  }
 }
 
 void
