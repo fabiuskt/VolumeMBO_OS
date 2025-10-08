@@ -65,9 +65,9 @@ VolumeMedianFitter::VolumeMedianFitter(
 }
 
 void
-VolumeMedianFitter::apply_flip_chain(const FlipChain& flip_chain)
+VolumeMedianFitter::apply_flip_tree(const FlipTree& flip_tree)
 {
-  for (const FlipEvent& event : flip_chain.chain) {
+  for (const FlipEvent& event : flip_tree.flips) {
 
     // Update priority queues
     remove(event.pid, event.donor);
@@ -79,7 +79,7 @@ VolumeMedianFitter::apply_flip_chain(const FlipChain& flip_chain)
     cluster_sizes[event.receiver]++;
 
     // Update median
-    median = flip_chain.get_median();
+    median = flip_tree.get_median();
   }
 }
 
@@ -104,12 +104,12 @@ VolumeMedianFitter::assign_clusters()
 }
 
 bool
-VolumeMedianFitter::build_flip_chain(FlipChain& flip_chain,
-                                     unsigned int recursion_level)
+VolumeMedianFitter::build_flip_tree(FlipTree& flip_tree,
+                                    unsigned int recursion_level)
 {
   // Limit recursion depth to avoid infinite loops
   if (recursion_level >
-      M - 3) { // flip chain already has one entry when entering this function
+      M - 3) { // flip tree already has one entry when entering this function
     printf("Recursion limit reached\n");
     fflush(stdout);
     return false;
@@ -117,23 +117,20 @@ VolumeMedianFitter::build_flip_chain(FlipChain& flip_chain,
 
   // Get pairs of possible flip labels
   std::vector<std::pair<Label, Label>> label_pairs =
-    flip_chain.generate_cross_pairs();
+    flip_tree.generate_cross_pairs();
 
   // Loop through possible pairs of flip labels
   FlipEvent best;
   for (const auto& [donor, receiver] : label_pairs) {
     printf("Checking pair (%u, %u)\n", donor, receiver);
     fflush(stdout);
-    // throw std::runtime_error(
-    //   "INVALID: The priority queues have not been updated wiile building the
-    //   " "lip chain and the flip time computation does not take the
-    //   intermediate " "median values into account. Major bug.");
+
     if (auto pid_opt = peek(donor, receiver)) {
       double t =
-        compute_flip_time(*pid_opt, donor, receiver, flip_chain.get_median());
+        compute_flip_time(*pid_opt, donor, receiver, flip_tree.get_median());
       if (t < best.t && std::isfinite(t)) {
         best.t = t;
-        best.dir = flip_chain.get_direction();
+        best.dir = flip_tree.get_direction();
         best.pid = *pid_opt;
         best.donor = donor;
         best.receiver = receiver;
@@ -147,15 +144,15 @@ VolumeMedianFitter::build_flip_chain(FlipChain& flip_chain,
          best.receiver);
   fflush(stdout);
 
-  flip_chain.add_event(best);
+  flip_tree.add_event(best);
 
-  if (mismatch_reduced(flip_chain)) {
+  if (mismatch_reduced(flip_tree)) {
     return true;
   } else {
-    flip_chain.mode == Mode::Grow
-      ? flip_chain.freeze(best.donor)
-      : flip_chain.freeze(best.receiver); // Why donor?
-    return build_flip_chain(flip_chain, recursion_level + 1);
+    flip_tree.mode == Mode::Grow
+      ? flip_tree.freeze(best.donor)
+      : flip_tree.freeze(best.receiver); // Why donor?
+    return build_flip_tree(flip_tree, recursion_level + 1);
   }
 }
 
@@ -287,8 +284,8 @@ VolumeMedianFitter::fit()
              best.receiver);
       fflush(stdout);
 
-      // Initialize flip chain
-      FlipChain flip_chain = { best, median, mode, M };
+      // Initialize flip tree
+      FlipTree flip_tree = { best, median, mode, M };
       unsigned int size_donor = cluster_sizes[best.donor];
       unsigned int lower_donor = lower_limit[best.donor];
       unsigned int size_receiver = cluster_sizes[best.receiver];
@@ -297,25 +294,25 @@ VolumeMedianFitter::fit()
       if ((mode == Mode::Grow && size_donor > lower_donor) ||
           (mode == Mode::Shrink && size_receiver < upper_receiver)) {
 
-        apply_flip_chain(flip_chain);
+        apply_flip_tree(flip_tree);
         flip_performed = true;
         break;
       } else if (M > 2) {
-        printf("Build flip chain:\n");
+        printf("Build flip tree:\n");
         fflush(stdout);
-        flip_chain.set_frozen_hyperplanes({ best.donor, best.receiver },
-                                          directions);
+        flip_tree.set_frozen_hyperplanes({ best.donor, best.receiver },
+                                         directions);
 
-        bool flip_chain_build = build_flip_chain(flip_chain, 0);
-        if (flip_chain_build) {
-          apply_flip_chain(flip_chain);
+        bool flip_tree_build = build_flip_tree(flip_tree, 0);
+        if (flip_tree_build) {
+          apply_flip_tree(flip_tree);
           flip_performed = true;
           break;
         }
       }
 
       if (i == M - 1 && !flip_performed) {
-        print_flip_chain(flip_chain);
+        print_flip_tree(flip_tree);
       }
     }
     if (!flip_performed) {
@@ -357,7 +354,7 @@ VolumeMedianFitter::initialize_priority_queues()
 }
 
 bool
-VolumeMedianFitter::mismatch_reduced(const FlipChain& flip_chain) const
+VolumeMedianFitter::mismatch_reduced(const FlipTree& flip_tree) const
 {
   auto mismatch = [&](const std::vector<unsigned int>& sizes) -> unsigned int {
     unsigned int total = 0;
@@ -375,8 +372,8 @@ VolumeMedianFitter::mismatch_reduced(const FlipChain& flip_chain) const
   auto current_sizes = cluster_sizes;
   unsigned int mismatch_before = mismatch(current_sizes);
 
-  // Apply flip chain hypothetically
-  for (const auto& ev : flip_chain.chain) {
+  // Apply flip tree hypothetically
+  for (const auto& ev : flip_tree.flips) {
     current_sizes[ev.donor]--;
     current_sizes[ev.receiver]++;
   }
@@ -439,9 +436,9 @@ VolumeMedianFitter::precompute_other_labels(unsigned int M)
 }
 
 void
-VolumeMedianFitter::print_flip_chain(const FlipChain& flip_chain)
+VolumeMedianFitter::print_flip_tree(const FlipTree& flip_tree)
 {
-  for (const FlipEvent& event : flip_chain.chain) {
+  for (const FlipEvent& event : flip_tree.flips) {
     std::cout << "  PID " << event.pid << ": " << event.donor << " → "
               << event.receiver << ", t = " << event.t << ", dir = [";
     for (std::size_t i = 0; i < event.dir.size(); ++i) {

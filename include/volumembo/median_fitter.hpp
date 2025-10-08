@@ -95,7 +95,7 @@ private:
 
   /**
    * @brief Specifies whether the current flip logic is in growth or shrinkage
-   * mode. Used in flip-chain construction to determine direction of movement
+   * mode. Used in flip-flips construction to determine direction of movement
    * and which cluster (frozen vs complement) is donor or receiver.
    */
   enum class Mode
@@ -119,7 +119,7 @@ private:
   };
 
   /**
-   * @brief Structure to manage frozen hyperplanes during flip chain building
+   * @brief Structure to manage frozen hyperplanes during flip flips building
    *
    * This structure keeps track of the set of frozen hyperplanes and their
    * complement. It provides methods to generate cross pairs of labels and to
@@ -223,27 +223,27 @@ private:
   };
 
   /**
-   * @brief Structure to represent a chain of flip events
+   * @brief Structure to represent the rooted tree of flip events
    *
    * This structure holds a sequence of flip events that represent a series of
    * flips to be applied to the clusters.
    */
-  struct FlipChain
+  struct FlipTree
   {
-    std::vector<FlipEvent> chain;
+    std::vector<FlipEvent> flips;
     FrozenHyperplanes frozen_hyperplanes;
-    Mode mode;
+    Mode mode; // Shrink mode: rooted out-tree; grow mode: rooted in-tree
     std::vector<double> median;
     const unsigned int M;
 
     /**
-     * @brief Constructor for FlipChain without frozen hyperplanes
+     * @brief Constructor for FlipTree without frozen hyperplanes
      */
-    FlipChain(const FlipEvent& event,
-              const std::vector<double>& median_,
-              Mode mode_,
-              unsigned int M_)
-      : chain{ event }
+    FlipTree(const FlipEvent& event,
+             const std::vector<double>& median_,
+             Mode mode_,
+             unsigned int M_)
+      : flips{ event }
       , median(median_)
       , mode(mode_)
       , M(M_)
@@ -255,16 +255,16 @@ private:
     }
 
     /**
-     * @brief Constructor for FlipChain with frozen hyperplanes
+     * @brief Constructor for FlipTree with frozen hyperplanes
      */
-    FlipChain(const FlipEvent& event,
-              const std::vector<double>& median_,
-              Mode mode_,
-              Label from,
-              Label to,
-              const std::vector<std::vector<double>>& directions,
-              unsigned int M_)
-      : chain{ event }
+    FlipTree(const FlipEvent& event,
+             const std::vector<double>& median_,
+             Mode mode_,
+             Label from,
+             Label to,
+             const std::vector<std::vector<double>>& directions,
+             unsigned int M_)
+      : flips{ event }
       , median(median_)
       , frozen_hyperplanes(mode_,
                            std::vector<Label>{ from, to },
@@ -277,11 +277,11 @@ private:
     }
 
     /**
-     * @brief Add a flip event to the chain and update the median
+     * @brief Add a flip event to the flips and update the median
      */
     void add_event(const FlipEvent& event)
     {
-      chain.push_back(event);
+      flips.push_back(event);
       update_median(event);
     }
 
@@ -319,7 +319,7 @@ private:
     const std::vector<double>& get_median() const { return median; }
 
     /**
-     * @brief Set frozen hyperplanes for the flip chain
+     * @brief Set frozen hyperplanes for the flip flips
      *
      * @param frozen A vector of labels representing the frozen hyperplanes
      * @param directions A vector of direction vectors for each cluster
@@ -360,10 +360,10 @@ private:
   /**
    * @brief Apply a sequence of flip events to update the median and clusters
    *
-   * @param flip_chain A vector of flip events representing the sequence of
+   * @param flip_tree A vector of flip events representing the sequence of
    * flips to apply
    */
-  void apply_flip_chain(const FlipChain& flip_chain);
+  void apply_flip_tree(const FlipTree& flip_tree);
 
   /**
    * @brief Assign clusters based on the current median
@@ -375,15 +375,15 @@ private:
   void assign_clusters();
 
   /**
-   * @brief Build a flip chain starting from a given direction
+   * @brief Build a flip flips starting from a given direction
    *
-   * @param flip_chain The current flip chain to which new events will be added
+   * @param flip_tree The current flip flips to which new events will be added
    * @param frozen_hyperplanes A set of labels representing the frozen
    * hyperplanes
    *
-   * @return true if a valid flip chain was built, false otherwise
+   * @return true if a valid flip flips was built, false otherwise
    */
-  bool build_flip_chain(FlipChain& flip_chain, unsigned int recursion_level);
+  bool build_flip_tree(FlipTree& flip_tree, unsigned int recursion_level);
 
   /**
    * @brief Compute the flip time for a point ID between two labels
@@ -452,13 +452,13 @@ private:
   void insert_into_queues(PID pid, Label from_label);
 
   /**
-   * @brief Check if the mismatch in cluster sizes is reduced by the flip chain
+   * @brief Check if the mismatch in cluster sizes is reduced by the flip flips
    *
-   * @param flip_chain The flip chain to evaluate
+   * @param flip_tree The flip flips to evaluate
    *
    * @return true if the mismatch is reduced, false otherwise
    */
-  bool mismatch_reduced(const FlipChain& flip_chain) const;
+  bool mismatch_reduced(const FlipTree& flip_tree) const;
 
   /**
    * @brief Peek at the top element of the priority queue for a given label pair
@@ -472,9 +472,9 @@ private:
   std::optional<PID> peek(Label from_label, Label to_label);
 
   /**
-   * @brief Print the flip chain for debugging purposes
+   * @brief Print the flip flips for debugging purposes
    */
-  void print_flip_chain(const FlipChain& flip_chain);
+  void print_flip_tree(const FlipTree& flip_tree);
 
   /**
    * @brief Precompute the directions for each cluster
