@@ -231,6 +231,8 @@ private:
   struct FlipTree
   {
     std::vector<FlipEvent> flips;
+    std::vector<std::size_t> valid_flips; // indices of flips corresponding to
+                                          // the path from leaf to root
     FrozenHyperplanes frozen_hyperplanes;
     Mode mode; // Shrink mode: rooted out-tree; grow mode: rooted in-tree
     std::vector<double> median;
@@ -384,6 +386,30 @@ private:
    * @return true if a valid flip flips was built, false otherwise
    */
   bool build_flip_tree(FlipTree& flip_tree, unsigned int recursion_level);
+
+  /**
+   * @brief Check if a cluster can donate points based on its lower limit
+   *
+   * @param label The label of the cluster to check
+   *
+   * @return true if the cluster can donate points, false otherwise
+   */
+  bool can_donate(Label label) const
+  {
+    return cluster_sizes[label] > lower_limit[label];
+  }
+
+  /**
+   * @brief Check if a cluster can receive more points based on its upper limit
+   *
+   * @param label The label of the cluster to check
+   *
+   * @return true if the cluster can receive more points, false otherwise
+   */
+  bool can_receive(Label label) const
+  {
+    return cluster_sizes[label] < upper_limit[label];
+  }
 
   /**
    * @brief Compute the flip time for a point ID between two labels
