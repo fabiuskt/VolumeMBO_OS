@@ -281,10 +281,14 @@ private:
     /**
      * @brief Add a flip event to the flips and update the median
      */
-    void add_event(const FlipEvent& event)
+    void add_event(const FlipEvent& event, bool active = false)
     {
       flips.push_back(event);
       update_median(event);
+
+      if (active) {
+        valid_flips.push_back(flips.size() - 1);
+      }
     }
 
     /**
@@ -358,6 +362,13 @@ private:
   std::map<std::pair<Label, Label>,
            ModifiablePriorityQueue<PID, FlipTimeComparator>>
     priority_queues;
+
+  /**
+   * @brief Apply a flip event to update the clusters and priority queues
+   *
+   * @param event The flip event to apply
+   */
+  void apply_flip_event(const FlipEvent& event);
 
   /**
    * @brief Apply a sequence of flip events to update the median and clusters
@@ -478,13 +489,13 @@ private:
   void insert_into_queues(PID pid, Label from_label);
 
   /**
-   * @brief Check if the mismatch in cluster sizes is reduced by the flip flips
+   * @brief Check if there is a valid path in the flip flips
    *
-   * @param flip_tree The flip flips to evaluate
+   * @param flip_tree The flip tree to evaluate
    *
-   * @return true if the mismatch is reduced, false otherwise
+   * @return true if there is a valid path, false otherwise
    */
-  bool mismatch_reduced(const FlipTree& flip_tree) const;
+  bool path_found(FlipTree& flip_tree) const;
 
   /**
    * @brief Peek at the top element of the priority queue for a given label pair
@@ -496,11 +507,6 @@ private:
    * otherwise std::nullopt
    */
   std::optional<PID> peek(Label from_label, Label to_label);
-
-  /**
-   * @brief Print the flip flips for debugging purposes
-   */
-  void print_flip_tree(const FlipTree& flip_tree);
 
   /**
    * @brief Precompute the directions for each cluster
@@ -522,6 +528,11 @@ private:
   */
   static std::vector<std::vector<Label>> precompute_other_labels(
     unsigned int M);
+
+  /**
+   * @brief Print the flip flips for debugging purposes
+   */
+  void print_flip_tree(const FlipTree& flip_tree);
 
   /**
    * @brief Remove a point ID from all priority queues associated with its label
