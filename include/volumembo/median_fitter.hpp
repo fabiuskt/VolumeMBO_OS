@@ -119,7 +119,7 @@ private:
   };
 
   /**
-   * @brief Structure to manage frozen hyperplanes during flip flips building
+   * @brief Structure to manage frozen hyperplanes during flip tree building
    *
    * This structure keeps track of the set of frozen hyperplanes and their
    * complement. It provides methods to generate cross pairs of labels and to
@@ -325,7 +325,7 @@ private:
     const std::vector<double>& get_median() const { return median; }
 
     /**
-     * @brief Set frozen hyperplanes for the flip flips
+     * @brief Set frozen hyperplanes for the flip tree
      *
      * @param frozen A vector of labels representing the frozen hyperplanes
      * @param directions A vector of direction vectors for each cluster
@@ -388,13 +388,13 @@ private:
   void assign_clusters();
 
   /**
-   * @brief Build a flip flips starting from a given direction
+   * @brief Build a flip tree starting from a given direction
    *
-   * @param flip_tree The current flip flips to which new events will be added
+   * @param flip_tree The current flip tree to which new events will be added
    * @param frozen_hyperplanes A set of labels representing the frozen
    * hyperplanes
    *
-   * @return true if a valid flip flips was built, false otherwise
+   * @return true if a valid flip tree was built, false otherwise
    */
   bool build_flip_tree(FlipTree& flip_tree, unsigned int recursion_level);
 
@@ -489,7 +489,7 @@ private:
   void insert_into_queues(PID pid, Label from_label);
 
   /**
-   * @brief Check if there is a valid path in the flip flips
+   * @brief Check if there is a valid path in the flip tree
    *
    * @param flip_tree The flip tree to evaluate
    *
@@ -530,7 +530,7 @@ private:
     unsigned int M);
 
   /**
-   * @brief Print the flip flips for debugging purposes
+   * @brief Print the flip tree for debugging purposes
    */
   void print_flip_tree(const FlipTree& flip_tree);
 
