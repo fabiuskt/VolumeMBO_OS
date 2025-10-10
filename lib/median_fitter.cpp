@@ -50,12 +50,12 @@ VolumeMedianFitter::VolumeMedianFitter(
   , lower_limit(lower_limit_)
   , upper_limit(upper_limit_)
   , N(static_cast<unsigned int>(u.rows()))
-  , M(static_cast<unsigned int>(u.cols()))
-  , median(M, 1.0 / static_cast<double>(M))
+  , P(static_cast<unsigned int>(u.cols()))
+  , median(P, 1.0 / static_cast<double>(P))
   , labels(N)
-  , cluster_sizes(M, 0)
-  , directions(precompute_directions(M))
-  , other_labels(precompute_other_labels(M))
+  , cluster_sizes(P, 0)
+  , directions(precompute_directions(P))
+  , other_labels(precompute_other_labels(P))
 {
   // Initialize labels and cluster sizes
   assign_clusters();
@@ -91,11 +91,11 @@ VolumeMedianFitter::apply_flip_tree(const FlipTree& flip_tree)
 void
 VolumeMedianFitter::assign_clusters()
 {
-  cluster_sizes.assign(M, 0);
+  cluster_sizes.assign(P, 0);
 
   for (std::size_t i = 0; i < N; ++i) {
     std::vector<double> u_minus_m = compute_u_minus_m(i);
-    for (unsigned int j = 0; j < M; ++j) {
+    for (unsigned int j = 0; j < P; ++j) {
       u_minus_m[j] -= median[j];
     }
 
@@ -114,7 +114,7 @@ VolumeMedianFitter::build_flip_tree(FlipTree& flip_tree,
 {
   // Limit recursion depth to avoid infinite loops
   if (recursion_level >
-      M - 3) { // flip tree already has one entry when entering this function
+      P - 3) { // flip tree already has one entry when entering this function
     return false;
   }
 
@@ -162,7 +162,7 @@ VolumeMedianFitter::compute_flip_time(PID pid,
   std::vector<double> u_minus_m = compute_u_minus_m(pid);
 
   return (u_minus_m[from_label] - u_minus_m[to_label]) *
-         static_cast<double>(M - 1) / static_cast<double>(M);
+         static_cast<double>(P - 1) / static_cast<double>(P);
 }
 
 double
@@ -175,14 +175,14 @@ VolumeMedianFitter::compute_flip_time(
   std::vector<double> u_minus_m = compute_u_minus_m(pid, median_override);
 
   return (u_minus_m[from_label] - u_minus_m[to_label]) *
-         static_cast<double>(M - 1) / static_cast<double>(M);
+         static_cast<double>(P - 1) / static_cast<double>(P);
 }
 
 std::vector<double>
 VolumeMedianFitter::compute_u_minus_m(std::size_t index) const
 {
-  std::vector<double> u_minus_m(M);
-  for (unsigned int j = 0; j < M; ++j) {
+  std::vector<double> u_minus_m(P);
+  for (unsigned int j = 0; j < P; ++j) {
     u_minus_m[j] = u(index, j) - median[j];
   }
   return u_minus_m;
@@ -193,8 +193,8 @@ VolumeMedianFitter::compute_u_minus_m(
   std::size_t index,
   const std::vector<double>& median_override) const
 {
-  std::vector<double> u_minus_m(M);
-  for (unsigned int j = 0; j < M; ++j) {
+  std::vector<double> u_minus_m(P);
+  for (unsigned int j = 0; j < P; ++j) {
     u_minus_m[j] = u(index, j) - median_override[j];
   }
   return u_minus_m;
@@ -216,7 +216,7 @@ VolumeMedianFitter::fit()
     // Flag to indicate if a flip was performed in this iteration
     bool flip_performed = false;
 
-    for (Label i = 0; i < M; ++i) {
+    for (Label i = 0; i < P; ++i) {
 
       // Determine if cluster i needs to grow or shrink
       Mode mode;
@@ -238,7 +238,7 @@ VolumeMedianFitter::fit()
         mode,
         { i },
         directions,
-        M); // Careful, here this acts only as helper for generating the pairs
+        P); // Careful, here this acts only as helper for generating the pairs
             // and direction
 
       // Get pairs of possible flip labels
@@ -259,7 +259,7 @@ VolumeMedianFitter::fit()
       }
 
       // Initialize flip tree
-      FlipTree flip_tree = { best, median, mode, M };
+      FlipTree flip_tree = { best, median, mode, P };
 
       unsigned int size_donor = cluster_sizes[best.donor];
       unsigned int lower_donor = lower_limit[best.donor];
@@ -273,7 +273,7 @@ VolumeMedianFitter::fit()
         median = flip_tree.get_median();
         flip_performed = true;
         break;
-      } else if (M > 2) {
+      } else if (P > 2) {
 
         flip_tree.set_frozen_hyperplanes({ best.donor, best.receiver },
                                          directions);
@@ -287,7 +287,7 @@ VolumeMedianFitter::fit()
         }
       }
 
-      if (i == M - 1 && !flip_performed) {
+      if (i == P - 1 && !flip_performed) {
         // print_flip_tree(flip_tree);
       }
     }
@@ -308,8 +308,8 @@ void
 VolumeMedianFitter::initialize_priority_queues()
 {
   // Initialize priority queues for each pair of labels
-  for (Label i = 0; i < M; ++i) {
-    for (Label j = 0; j < M; ++j) {
+  for (Label i = 0; i < P; ++i) {
+    for (Label j = 0; j < P; ++j) {
       if (i == j)
         continue;
       auto key = std::make_pair(i, j);
@@ -399,13 +399,13 @@ VolumeMedianFitter::peek(Label from_label, Label to_label)
 }
 
 std::vector<std::vector<double>>
-VolumeMedianFitter::precompute_directions(unsigned int M)
+VolumeMedianFitter::precompute_directions(unsigned int P)
 {
   std::vector<std::vector<double>> directions;
-  directions.reserve(M);
+  directions.reserve(P);
 
-  for (unsigned int i = 0; i < M; ++i) {
-    std::vector<double> d(M, 1.0 / static_cast<double>(M - 1));
+  for (unsigned int i = 0; i < P; ++i) {
+    std::vector<double> d(P, 1.0 / static_cast<double>(P - 1));
     d[i] = -1.0;
     directions.push_back(std::move(d));
   }
@@ -414,14 +414,14 @@ VolumeMedianFitter::precompute_directions(unsigned int M)
 }
 
 std::vector<std::vector<Label>>
-VolumeMedianFitter::precompute_other_labels(unsigned int M)
+VolumeMedianFitter::precompute_other_labels(unsigned int P)
 {
   std::vector<std::vector<Label>> other_labels;
-  other_labels.resize(M);
+  other_labels.resize(P);
 
-  for (Label i = 0; i < M; ++i) {
-    other_labels[i].reserve(M - 1);
-    for (Label j = 0; j < M; ++j) {
+  for (Label i = 0; i < P; ++i) {
+    other_labels[i].reserve(P - 1);
+    for (Label j = 0; j < P; ++j) {
       if (j != i) {
         other_labels[i].push_back(j);
       }
@@ -473,7 +473,7 @@ VolumeMedianFitter::remove(PID pid, Label from_label)
 bool
 VolumeMedianFitter::volumes_matched() const
 {
-  for (Label i = 0; i < M; ++i) {
+  for (Label i = 0; i < P; ++i) {
     // Check if the cluster size is within the limits
     if (cluster_sizes[i] < lower_limit[i] || cluster_sizes[i] > upper_limit[i])
       return false;

@@ -64,9 +64,9 @@ public:
   /**
    * @brief Constructor for VolumeMedianFitter
    *
-   * @param u_ A 2D span of doubles representing the data points (shape N × M)
-   * @param lower_limit_ A vector of lower limits for each cluster (size M)
-   * @param upper_limit_ A vector of upper limits for each cluster (size M)
+   * @param u_ A 2D span of doubles representing the data points (shape N × P)
+   * @param lower_limit_ A vector of lower limits for each cluster (size P)
+   * @param upper_limit_ A vector of upper limits for each cluster (size P)
    */
   VolumeMedianFitter(Span2D<const double> u_,
                      const std::vector<unsigned int>& lower_limit_,
@@ -82,16 +82,16 @@ public:
   friend struct FlipTimeComparator;
 
 private:
-  Span2D<const double> u;                       // shape N × M
-  const std::vector<unsigned int>& lower_limit; // size M
-  const std::vector<unsigned int>& upper_limit; // size M
+  Span2D<const double> u;                       // shape N × P
+  const std::vector<unsigned int>& lower_limit; // size P
+  const std::vector<unsigned int>& upper_limit; // size P
 
-  const unsigned int N, M;    // N = number of points, M = number of clusters
+  const unsigned int N, P;    // N = number of points, P = number of clusters
   std::vector<double> median; // current median in simplex
   std::vector<Label> labels;  // length N
-  std::vector<unsigned int> cluster_sizes;            // length M
-  const std::vector<std::vector<double>> directions;  // size M of dim M
-  const std::vector<std::vector<Label>> other_labels; // size M of size M-1
+  std::vector<unsigned int> cluster_sizes;            // length P
+  const std::vector<std::vector<double>> directions;  // size P of dim P
+  const std::vector<std::vector<Label>> other_labels; // size P of size P-1
 
   /**
    * @brief Specifies whether the current flip logic is in growth or shrinkage
@@ -128,7 +128,7 @@ private:
   struct FrozenHyperplanes
   {
     Mode mode;
-    unsigned int M;
+    unsigned int P;
     std::vector<Label> frozen;
     std::vector<Label> complement;
     std::vector<std::vector<double>> directions;
@@ -139,23 +139,23 @@ private:
       : mode(Mode::Grow)
       , frozen({})
       , directions()
-      , M(0)
+      , P(0)
     {
     }
 
     FrozenHyperplanes(Mode mode_,
                       std::vector<Label> frozen_labels,
                       const std::vector<std::vector<double>>& directions_,
-                      unsigned int M_)
+                      unsigned int P_)
       : mode(mode_)
       , frozen(std::move(frozen_labels))
       , directions(directions_)
-      , dir(M_)
-      , M(M_)
+      , dir(P_)
+      , P(P_)
     {
       // Initialize complement
-      complement.reserve(M - frozen.size());
-      for (Label i = 0; i < static_cast<Label>(M); ++i) {
+      complement.reserve(P - frozen.size());
+      for (Label i = 0; i < static_cast<Label>(P); ++i) {
         if (std::find(frozen.begin(), frozen.end(), i) == frozen.end()) {
           complement.push_back(i);
         }
@@ -166,7 +166,7 @@ private:
 
       // Initialize direction
       for (Label label : frozen) {
-        for (std::size_t j = 0; j < M; ++j) {
+        for (std::size_t j = 0; j < P; ++j) {
           dir[j] += static_cast<double>(sign) * directions[label][j];
         }
       }
@@ -187,7 +187,7 @@ private:
       }
 
       // Update direction
-      for (std::size_t j = 0; j < M; ++j) {
+      for (std::size_t j = 0; j < P; ++j) {
         dir[j] += static_cast<double>(sign) * directions[label][j];
       }
     }
@@ -236,7 +236,7 @@ private:
     FrozenHyperplanes frozen_hyperplanes;
     Mode mode; // Shrink mode: rooted out-tree; grow mode: rooted in-tree
     std::vector<double> median;
-    const unsigned int M;
+    const unsigned int P;
 
     /**
      * @brief Constructor for FlipTree without frozen hyperplanes
@@ -244,14 +244,14 @@ private:
     FlipTree(const FlipEvent& event,
              const std::vector<double>& median_,
              Mode mode_,
-             unsigned int M_)
+             unsigned int P_)
       : flips{ event }
       , median(median_)
       , mode(mode_)
-      , M(M_)
+      , P(P_)
     {
       // Update median
-      for (unsigned int i = 0; i < M; ++i) {
+      for (unsigned int i = 0; i < P; ++i) {
         median[i] += event.t * event.dir[i];
       }
     }
@@ -265,15 +265,15 @@ private:
              Label from,
              Label to,
              const std::vector<std::vector<double>>& directions,
-             unsigned int M_)
+             unsigned int P_)
       : flips{ event }
       , median(median_)
       , frozen_hyperplanes(mode_,
                            std::vector<Label>{ from, to },
                            directions,
-                           M_)
+                           P_)
       , mode(mode_)
-      , M(M_)
+      , P(P_)
     {
       update_median(event);
     }
@@ -329,14 +329,14 @@ private:
      *
      * @param frozen A vector of labels representing the frozen hyperplanes
      * @param directions A vector of direction vectors for each cluster
-     * @param M The number of clusters
+     * @param P The number of clusters
      */
     void set_frozen_hyperplanes(
       std::vector<Label> frozen,
       const std::vector<std::vector<double>>& directions)
     {
       frozen_hyperplanes =
-        FrozenHyperplanes(mode, std::move(frozen), directions, M);
+        FrozenHyperplanes(mode, std::move(frozen), directions, P);
     }
 
     /**
@@ -346,7 +346,7 @@ private:
      */
     void update_median(const FlipEvent& event)
     {
-      for (unsigned int i = 0; i < M; ++i) {
+      for (unsigned int i = 0; i < P; ++i) {
         median[i] += event.t * event.dir[i];
       }
     }
@@ -511,23 +511,23 @@ private:
   /**
    * @brief Precompute the directions for each cluster
    *
-   * @param M The number of clusters
+   * @param P The number of clusters
    *
    * @return A vector of vectors, where each inner vector contains the direction
    * for a cluster
    */
-  static std::vector<std::vector<double>> precompute_directions(unsigned int M);
+  static std::vector<std::vector<double>> precompute_directions(unsigned int P);
 
   /**
    * @brief Precompute the other labels for each cluster (0: 1-M-1, 1: 0, 2-M-1,
   2: 0-1, 3-M-1, etc.)
    *
-   * @param M The number of clusters
+   * @param P The number of clusters
    *
    * @return A vector of vectors, where each inner vector contains the labels
   */
   static std::vector<std::vector<Label>> precompute_other_labels(
-    unsigned int M);
+    unsigned int P);
 
   /**
    * @brief Print the flip tree for debugging purposes
