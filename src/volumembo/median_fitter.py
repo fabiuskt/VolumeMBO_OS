@@ -11,15 +11,15 @@ class VolumeMedianFitter:
         self, u: np.ndarray, lower_limit: np.ndarray, upper_limit: np.ndarray
     ) -> None:
         self.u = u
-        self.N, self.M = u.shape
+        self.N, self.P = u.shape
         self.lower_limit = lower_limit
         self.upper_limit = upper_limit
-        self.median = np.full(self.M, 1.0 / self.M)  # Start at simplex barycenter
+        self.median = np.full(self.P, 1.0 / self.P)  # Start at simplex barycenter
         self.labels = assign_clusters(self.u, self.median)
-        self.cluster_sizes = np.bincount(self.labels, minlength=self.M)
-        self.directions = [direction_to_grow(i, self.M) for i in range(self.M)]
+        self.cluster_sizes = np.bincount(self.labels, minlength=self.P)
+        self.directions = [direction_to_grow(i, self.P) for i in range(self.P)]
         self.other_labels = [
-            [j for j in range(self.M) if j != i] for i in range(self.M)
+            [j for j in range(self.P) if j != i] for i in range(self.P)
         ]
 
         # Priority queues for all (from_cluster, to_cluster) pairs.
@@ -52,7 +52,7 @@ class VolumeMedianFitter:
                 break
 
             cluster = self._select_label(offset)
-            offset = (cluster + 1) % self.M
+            offset = (cluster + 1) % self.P
 
             candidates = []
             if self.cluster_sizes[cluster] < self.lower_limit[cluster]:
@@ -112,7 +112,7 @@ class VolumeMedianFitter:
             self.cluster_sizes[from_label] -= 1
             self.cluster_sizes[to_label] += 1
             # self.labels = assign_clusters(self.u, self.median)
-            # self.cluster_sizes = np.bincount(self.labels, minlength=self.M)
+            # self.cluster_sizes = np.bincount(self.labels, minlength=self.P)
             # print("Cluster {}\n".format(self.cluster_sizes))
 
             iteration += 1
@@ -134,7 +134,7 @@ class VolumeMedianFitter:
             float: Distance m has to be moved such that the point would flip from from_cluster to to_cluster
         """
         u_minus_m = self.u[pid] - self.median
-        return (u_minus_m[from_label] - u_minus_m[to_label]) * (self.M - 1) / self.M
+        return (u_minus_m[from_label] - u_minus_m[to_label]) * (self.P - 1) / self.P
 
     def _initialize_priority_queues(self) -> None:
         for pid in range(self.N):
@@ -180,12 +180,12 @@ class VolumeMedianFitter:
         violations = np.maximum(under, over)
 
         if not np.any(violations):
-            return offset % self.M  # Fallback
+            return offset % self.P  # Fallback
 
         # Rotate violations to implement soft cycling
         rotated = np.roll(violations, -offset)
         idx_in_rotated = np.argmax(rotated)
-        return (offset + idx_in_rotated) % self.M
+        return (offset + idx_in_rotated) % self.P
 
     def _volumes_matched(self) -> bool:
         return np.all(

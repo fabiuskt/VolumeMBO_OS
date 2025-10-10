@@ -30,7 +30,7 @@ class MBO:
         :labels:
             Labels for the dataset, (N,) shape, where N is the number of points.
         :data:
-            Dataset, (N, M) shape, where N is the number of points and M is the number of features/labels
+            Dataset, (N, P) shape, where N is the number of points and P is the number of features/labels
         :weight_matrix:
             Precomputed weight matrix, if None, it will be computed from the data
             using k-nearest neighbors with a Gaussian kernel.
@@ -597,7 +597,7 @@ class MBO:
         Enforce fidelity constraints by overwriting chi at known indices.
 
         Args:
-            chi (np.ndarray): One-hot encoded label matrix of shape (N, M)
+            chi (np.ndarray): One-hot encoded label matrix of shape (N, P)
 
         Returns:
             np.ndarray: Modified chi with known labels re-inserted

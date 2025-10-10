@@ -3,7 +3,7 @@ import scipy as sp
 
 
 def direction_to_grow(cluster_idx: int, number_of_labels: int) -> np.ndarray:
-    """Return the direction to grow cluster `cluster_idx` in the M-simplex."""
+    """Return the direction to grow cluster `cluster_idx` in the P-simplex."""
     direction = np.full(number_of_labels, 1 / (number_of_labels - 1))
     direction[cluster_idx] = -1
     return direction
