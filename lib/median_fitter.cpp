@@ -6,9 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
-#include <iostream>
 #include <iterator>
-#include <limits>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -144,7 +142,6 @@ VolumeMedianFitter::build_flip_tree(FlipTree& flip_tree,
                         ? can_receive(best.receiver)
                         : can_donate(best.donor));
 
-  // print_flip_tree(flip_tree);
   if (path_found(flip_tree)) {
     return true;
   } else {
@@ -280,15 +277,10 @@ VolumeMedianFitter::fit()
 
         bool flip_tree_build = build_flip_tree(flip_tree, 0);
         if (flip_tree_build) {
-          // print_flip_tree(flip_tree);
           apply_flip_tree(flip_tree);
           flip_performed = true;
           break;
         }
-      }
-
-      if (i == P - 1 && !flip_performed) {
-        // print_flip_tree(flip_tree);
       }
     }
     if (!flip_performed) {
@@ -429,37 +421,6 @@ VolumeMedianFitter::precompute_other_labels(unsigned int P)
   }
 
   return other_labels;
-}
-
-void
-VolumeMedianFitter::print_flip_tree(const FlipTree& flip_tree)
-{
-  std::cout << "All:" << std::endl;
-  for (const FlipEvent& event : flip_tree.flips) {
-    std::cout << "  PID " << event.pid << ": " << event.donor << " → "
-              << event.receiver << ", t = " << event.t << ", dir = [";
-    for (std::size_t i = 0; i < event.dir.size(); ++i) {
-      std::cout << event.dir[i];
-      if (i < event.dir.size() - 1)
-        std::cout << ", ";
-    }
-    std::cout << "]" << std::endl;
-    std::cout << std::flush;
-  }
-
-  std::cout << "Valid:" << std::endl;
-  for (const std::size_t& index : flip_tree.valid_flips) {
-    FlipEvent event = flip_tree.flips[index];
-    std::cout << "  PID " << event.pid << ": " << event.donor << " → "
-              << event.receiver << ", t = " << event.t << ", dir = [";
-    for (std::size_t i = 0; i < event.dir.size(); ++i) {
-      std::cout << event.dir[i];
-      if (i < event.dir.size() - 1)
-        std::cout << ", ";
-    }
-    std::cout << "]" << std::endl;
-    std::cout << std::flush;
-  }
 }
 
 void

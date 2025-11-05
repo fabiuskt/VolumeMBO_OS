@@ -530,11 +530,6 @@ private:
     unsigned int P);
 
   /**
-   * @brief Print the flip tree for debugging purposes
-   */
-  void print_flip_tree(const FlipTree& flip_tree);
-
-  /**
    * @brief Remove a point ID from all priority queues associated with its label
    *
    * @param pid The point ID to remove
