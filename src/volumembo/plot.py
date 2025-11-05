@@ -1,3 +1,24 @@
+"""
+SimplexPlotter
+==============
+
+Utility for visualizing points, trajectories, and medians inside a 2D simplex
+(3D barycentric coordinates projected into 2D).
+
+A 2D simplex here is the triangle defined by the unit barycentric coordinates
+(1,0,0), (0,1,0), (0,0,1). Points represent compositions u = (u0, u1, u2)
+with u0 + u1 + u2 = 1, common in ternary phase diagrams and clustering
+simplex-based methods (e.g., MBO, volume-preserving clustering).
+
+Features:
+- Renders simplex outline & axes
+- Grid lines in barycentric coordinates
+- Ticks & axis labels along edges
+- Plot medians with orthogonal projections to edges
+- Scatter points with optional cluster colors
+- Plot optimization trace/history in the simplex plane
+"""
+
 from collections.abc import Sequence
 
 import matplotlib as mpl
@@ -6,26 +27,47 @@ import numpy as np
 
 
 class SimplexPlotter:
+    """Plot a 2D simplex (triangle) and data living in barycentric coordinates.
+
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        Target axes to draw on. If None, use current active axes.
+
+    Notes
+    -----
+    - The vertices A, B, C correspond to barycentric basis vectors e0, e1, e2.
+    - Points in ℝ³ are projected onto the plane x+y+z=1 before converting to 2D.
+    """
+
     def __init__(self, ax: Axes) -> None:
+        # Use provided axes or fall back to current
         self.ax = ax or mpl.pyplot.gca()
+
+        # Cartesian coordinates for the simplex vertices (equilateral triangle)
         self.A = np.array([0.0, 0.0])
         self.B = np.array([1.0, 0.0])
         self.C = np.array([0.5, np.sqrt(3) / 2])
+
+        # Closed polygon for drawing the outline
         self.triangle = np.array([self.A, self.B, self.C, self.A])
 
+        # Default cluster colors (u0, u1, u2)
         self.color0 = "deepskyblue"
         self.color1 = "gold"
         self.color2 = "magenta"
 
+        # Use LaTeX text rendering (looks nicer for u_0, u_1, u_2)
         mpl.rcParams["text.usetex"] = True
 
+        # Set default axes properties
         ax.set_aspect("equal")
         ax.axis("off")
         ax.set_xlim(left=-0.075, right=1.075)
         ax.set_ylim(bottom=-0.075, top=1.075)
 
     def add_grid_lines(self, n: int = 10, **kwargs) -> None:
-        """Draw grid lines inside the simplex.
+        """Draw barycentric grid lines (constant u0, u1, u2).
 
         Args:
             n (int): Number of grid lines per direction.
@@ -65,7 +107,7 @@ class SimplexPlotter:
         **kwargs,
     ) -> None:
         """
-        Add ticks along the edges of the simplex, aligned with the barycentric axes.
+        Add evenly spaced ticks along the edges of the simplex, aligned with the barycentric axes.
 
         Args:
             n (int): Number of ticks per axis.
@@ -78,12 +120,14 @@ class SimplexPlotter:
         kwargs.setdefault("linewidth", 2)
         kwargs.setdefault("solid_capstyle", "round")
 
+        # Edge endpoints in 2D
         edges = [
             (self.A, self.B),  # edge AB
             (self.B, self.C),  # edge BC
             (self.A, self.C),  # edge AC
         ]
 
+        # Directions for ticks (inward/outward normals to each edge)
         directions = [
             np.array([0.5, -np.sqrt(3) / 2]),
             np.array([0.5, np.sqrt(3) / 2]),

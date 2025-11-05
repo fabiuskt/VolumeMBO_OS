@@ -17,16 +17,25 @@ description = "Efficient Volume-Preserving MBO Scheme for Data Clustering"
 license = "Apache-2.0"
 license-files = ["LICENSE.md"]
 readme = "README.md"
-authors = [{ name = "Fabius Krämer", email = "f.kraemer@math.uni-heidelberg.de" }]
+authors = [{ name = "Fabius Krämer", email = "f.kraemer@math.uni-heidelberg.de" }, { name = "Thomas Isensee", email = "thomas.isensee@iwr.uni-heidelberg.de" }]
 requires-python = ">=3.10"
 dependencies = ["graphlearning", "matplotlib", "numpy", "scipy", "scikit-learn"]
 classifiers = [
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: C++",
     "Operating System :: OS Independent",
     "Topic :: Scientific/Engineering :: Mathematics",
     "Intended Audience :: Science/Research",
 ]
+
+[project.urls]
+repository = "https://github.com/fabiuskt/VolumeMBO_OS"
+
 [project.optional-dependencies]
 test = ["pytest"]
 
@@ -36,7 +45,7 @@ cmake.version = "CMakeLists.txt"
 ninja.version = ">=1.11"
 
 [tool.scikit-build.cmake.define]
-BUILD_TESTS = "OFF"
+BUILD_TESTS = "ON"
 
 [tool.pre-commit]
 hook-types = ["pre-commit"]

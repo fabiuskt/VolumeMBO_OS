@@ -18,11 +18,10 @@ PYBIND11_MODULE(_volumembo, m)
 {
   m.doc() = "Python Bindings for volumembo";
 
-  m.def(
-    "fit_median_cpp",
+  auto internal_fit_median =
     [](py::array_t<double, py::array::c_style | py::array::forcecast> u_np,
-       std::vector<unsigned int> lower_limit,
-       std::vector<unsigned int> upper_limit) {
+       const std::vector<unsigned int>& lower_limit,
+       const std::vector<unsigned int>& upper_limit) {
       if (u_np.ndim() != 2)
         throw std::invalid_argument("u must be a 2D array");
 
@@ -33,17 +32,34 @@ PYBIND11_MODULE(_volumembo, m)
         throw std::invalid_argument(
           "Volume limits must match number of clusters");
 
-      // Wrap in custom Span2D type
       Span2D<const double> u_view(u_np.data(), N, M);
-
-      // Run the fitter
       VolumeMedianFitter fitter(u_view, lower_limit, upper_limit);
       return fitter.fit();
+    };
+
+  m.def(
+    "fit_median_cpp",
+    [internal_fit_median](
+      py::array_t<double, py::array::c_style | py::array::forcecast> u_np,
+      std::vector<unsigned int> lower_limit,
+      std::vector<unsigned int> upper_limit) {
+      return internal_fit_median(u_np, lower_limit, upper_limit);
     },
     py::arg("u"),
     py::arg("lower_limit"),
     py::arg("upper_limit"),
     "Fit median using the C++ priority queue implementation (zero-copy)");
+
+  m.def(
+    "fit_median_cpp",
+    [internal_fit_median](
+      py::array_t<double, py::array::c_style | py::array::forcecast> u_np,
+      std::vector<unsigned int> target) {
+      return internal_fit_median(u_np, target, target);
+    },
+    py::arg("u"),
+    py::arg("target"),
+    "Fit median using the same value for lower and upper limits");
 }
 
 } // namespace volumembo
