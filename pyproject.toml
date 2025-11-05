@@ -17,7 +17,7 @@ description = "Efficient Volume-Preserving MBO Scheme for Data Clustering"
 license = "Apache-2.0"
 license-files = ["LICENSE.md"]
 readme = "README.md"
-authors = [{ name = "Fabius Krämer", email = "f.kraemer@math.uni-heidelberg.de" }]
+authors = [{ name = "Fabius Krämer", email = "f.kraemer@math.uni-heidelberg.de" }, { name = "Thomas Isensee", email = "thomas.isensee@iwr.uni-heidelberg.de" }]
 requires-python = ">=3.10"
 dependencies = ["graphlearning", "matplotlib", "numpy", "scipy", "scikit-learn"]
 classifiers = [
