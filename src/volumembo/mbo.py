@@ -6,7 +6,6 @@ import numpy as np
 import scipy as sp
 
 from volumembo.legacy import fit_median as fit_median_legacy
-from volumembo.median_fitter import VolumeMedianFitter
 from volumembo.timer import TimingManager
 from volumembo.utils import (
     bellman_ford_voronoi_initialization,
@@ -67,7 +66,6 @@ class MBO:
             Method for thresholding the diffused values, can be one of:
             - "argmax": simple argmax thresholding
             - "fit_median_cpp": fit median thresholding using C++ implementation
-            - "fit_median": fit median thresholding
             - "fit_median_legacy": legacy implementation of fit median thresholding
         """
         self.A_3: sp.sparse.spmatrix | None = None
@@ -557,7 +555,7 @@ class MBO:
         """
         Returns a threshold function based on the specified method.
         Args:
-            method (str): Method for thresholding, can be "argmax", "fit_median_cpp", "fit_median", or "fit_median_legacy"
+            method (str): Method for thresholding, can be "argmax", "fit_median_cpp", or "fit_median_legacy"
         """
         threshold_methods = {
             "argmax": lambda u: self._diffused_to_onehot(u),
@@ -570,7 +568,6 @@ class MBO:
                     np.full(self.number_of_labels, 1 / self.number_of_labels),
                 )[1]
             ),
-            "fit_median": lambda u: self._fit_median_priority_queue(u),
             "fit_median_cpp": lambda u: self._diffused_to_onehot(
                 u - fit_median_cpp(u, self.volume, self.volume)
             ),

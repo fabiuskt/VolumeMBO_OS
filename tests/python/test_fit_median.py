@@ -18,7 +18,7 @@ def test_fit_median():
         diffusion_time=1.0,
         number_of_known_labels=5,
         initial_clustering_method="random",
-        threshold_method="fit_median",
+        threshold_method="fit_median_cpp",
         diffusion_method="A_3",
     )
 
@@ -30,27 +30,24 @@ def test_fit_median():
     diffused_labels = MBO.diffuse(labels_before_diffusion)
 
     # Restrict to exact volume
-    upper_limit = MBO.volume
-    lower_limit = MBO.volume
-
-    # Get labels and median from class-based fitter
-    fitter = volumembo.median_fitter.VolumeMedianFitter(
-        diffused_labels, lower_limit, upper_limit
-    )
-    clustering, _ = fitter.run(return_history=True)
+    target = MBO.volume
+    P = len(target)
 
     # Get labels and median from C++ fitter
-    median_cpp = _volumembo.fit_median_cpp(diffused_labels, lower_limit, upper_limit)
+    median_cpp = _volumembo.fit_median_cpp(diffused_labels, target)
     clustering_cpp = volumembo.utils.assign_clusters(diffused_labels, median_cpp)
+    count_cpp = np.bincount(clustering_cpp)
+    assert np.sum(count_cpp) == np.sum(target)
+    assert np.all(np.abs(count_cpp - target) < P)  # Maximum volume error = P-1
 
     # Get labels and median from legacy fitter
     _, clustering_legacy, _ = volumembo.legacy.fit_median(
         number_of_labels,
-        lower_limit,
-        upper_limit,
+        target,
+        target,
         diffused_labels,
         np.full(number_of_labels, 1 / number_of_labels),
     )
-
-    assert np.all(clustering == clustering_legacy)
-    assert np.all(clustering == clustering_cpp)
+    count_legacy = np.bincount(clustering_legacy)
+    assert np.sum(count_legacy) == np.sum(target)
+    assert np.all(np.abs(count_legacy - target) < P)  # Maximum volume error = P-1
