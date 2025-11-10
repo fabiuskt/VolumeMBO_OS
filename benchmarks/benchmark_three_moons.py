@@ -29,7 +29,6 @@ def main():
         ("argmax", "A_3"),
         ("argmax", "W2"),
         ("fit_median_cpp", "A_3"),
-        ("fit_median", "A_3"),
         ("fit_median_legacy", "A_3"),
     ]
 
@@ -37,6 +36,7 @@ def main():
 
     # Run benchmarks
     for n, N in enumerate(NSamples):
+        print("Working on N =", N, f"({n+1}/{len(NSamples)})")
         data, labels = volumembo.datasets.load_dataset("3_moons", N=N, noise=0.075)
         MBO = volumembo.MBO(
             data=data,
