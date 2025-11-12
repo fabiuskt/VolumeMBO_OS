@@ -1,6 +1,5 @@
 import datetime
 import pickle
-import numpy as np
 
 import volumembo
 
@@ -36,7 +35,7 @@ def main():
 
     # Run benchmarks
     for n, N in enumerate(NSamples):
-        print("Working on N =", N, f"({n+1}/{len(NSamples)})")
+        print("Working on N =", N, f"({n + 1}/{len(NSamples)})")
         data, labels = volumembo.datasets.load_dataset("3_moons", N=N, noise=0.075)
         MBO = volumembo.MBO(
             data=data,
@@ -66,7 +65,7 @@ def main():
                 (N, run_avg, diffusion_avg, threshold_avg, build_avg)
             )
 
-    # Save results to a compressed .npz file
+    # Save results
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"./benchmark_three_moons_{timestamp}.pkl"
     with open(filename, "wb") as f:

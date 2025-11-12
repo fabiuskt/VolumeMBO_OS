@@ -4,6 +4,7 @@ from datetime import datetime
 import graphlearning as gl
 import numpy as np
 import scipy as sp
+from _volumembo import fit_median_cpp
 
 from volumembo.legacy import fit_median as fit_median_legacy
 from volumembo.timer import TimingManager
@@ -11,8 +12,6 @@ from volumembo.utils import (
     bellman_ford_voronoi_initialization,
     onehot_to_labels,
 )
-
-from _volumembo import fit_median_cpp
 
 
 class MBO:
@@ -274,6 +273,7 @@ class MBO:
         energy = np.inf
 
         # Run the MBO iteration loop
+        count = 0
         for count in range(max_iterations):
             if not self.temperature and relative_energy_change < tolerance:
                 break
@@ -663,7 +663,3 @@ class MBO:
         )
         onehot[np.arange(self.number_of_points), labels] = 1.0
         return onehot
-
-    def _fit_median_priority_queue(self, u: np.ndarray) -> np.ndarray:
-        labels = VolumeMedianFitter.fit(u, self.lower_limit, self.upper_limit)
-        return self._labels_to_onehot(labels)

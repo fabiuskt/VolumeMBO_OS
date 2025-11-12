@@ -22,8 +22,8 @@ Features:
 from collections.abc import Sequence
 
 import matplotlib as mpl
-from matplotlib.axes import Axes
 import numpy as np
+from matplotlib.axes import Axes
 
 
 class SimplexPlotter:

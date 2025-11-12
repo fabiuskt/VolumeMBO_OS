@@ -1,7 +1,7 @@
+import _volumembo
 import numpy as np
 
 import volumembo
-import _volumembo
 
 
 def test_fit_median():

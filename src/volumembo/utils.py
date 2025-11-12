@@ -47,7 +47,6 @@ def bellman_ford_voronoi_initialization(
     active[fixedLabels] = True
     voronoiDistances = np.zeros(N)
     for i in range(N):
-
         if not active[i]:
             voronoiDistances[i] = np.inf
 
