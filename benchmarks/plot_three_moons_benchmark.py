@@ -1,10 +1,11 @@
 import argparse
 import datetime
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-from matplotlib.ticker import ScalarFormatter
 import pickle
+
+import matplotlib.gridspec as gridspec
+import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.ticker import ScalarFormatter
 
 
 def plot_results(input_data):
@@ -29,7 +30,7 @@ def plot_results(input_data):
         input_data.items()
     ):
         label = f"{threshold_method} + {diffusion_method}"
-        N, total, _, _, _ = zip(*entries)
+        N, total, _, _, _ = zip(*entries, strict=True)
         ax0.plot(
             N,
             total,
@@ -64,7 +65,7 @@ def plot_results(input_data):
         input_data.items()
     ):
         label = f"{threshold_method} + {diffusion_method}"
-        N, total, _, _, _ = zip(*entries)
+        N, total, _, _, _ = zip(*entries, strict=True)
         N_scaled = N * np.log(N)
         ax1.plot(
             N_scaled,
@@ -100,7 +101,7 @@ def plot_results(input_data):
         input_data.items()
     ):
         label = f"{threshold_method} + {diffusion_method}"
-        N, total, diffusion, threshold, build_matrices = zip(*entries)
+        N, total, diffusion, threshold, build_matrices = zip(*entries, strict=True)
         ax2.plot(
             N,
             diffusion,

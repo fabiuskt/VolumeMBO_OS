@@ -14,10 +14,9 @@ Using `volumembo` requires the following software installed:
 
 * Python `>= 3.10`
 
-In order to build the package from source, the following tools are also needed.
+In order to build the package from source, the following tools are also needed:
 
 * A C++20-compliant compiler
-* CMake `>= 3.30`
 
 ### Building from source using pip
 
@@ -29,6 +28,14 @@ cd VolumeMBO_OS
 python -m pip install .
 ```
 
+⚡ Optional: Faster installation using [uv](https://docs.astral.sh/uv/)
+
+uv is a drop-in replacement for pip and virtualenv that provides extremely fast package installation and dependency resolution.
+
+```
+python -m uv pip install .
+```
+
 #### Development installation
 
 If you intend to contribute to the development of volumembo, we recommend a locally compiled version using these instructions:
@@ -36,11 +43,11 @@ If you intend to contribute to the development of volumembo, we recommend a loca
 ```
 git clone --recurse-submodules https://github.com/fabiuskt/VolumeMBO_OS
 cd VolumeMBO_OS
-python -m pip install -r requirements-dev.txt
-python -m pip install --no-build-isolation --config-settings=build-dir="build" -v -e .
+python -m uv pip install -r requirements-dev.txt
+python -m uv pip install --no-build-isolation --config-settings=build-dir="build" --config-settings=cmake.define.BUILD_TESTS="ON" -v -e .
 ```
 
-This clones the repository including all submodules, installs the `volumembo` package, and exposes the CMake build directory as `build`. The `-e` (editable) flag allows the change of Python sources of `volumembo` without reinstalling the package. The `-v` flag enables verbose output which gives you detailed information about the compilation process that you should include into potential bug reports. To recompile the C++ source, please re-run `pip install`.
+This clones the repository including all submodules, installs the `volumembo` package, exposes the CMake build directory as `build`, and builds tests. The `-e` (editable) flag allows the change of Python sources of `volumembo` without reinstalling the package. The `-v` flag enables verbose output which gives you detailed information about the compilation process that you should include into potential bug reports. To recompile the C++ source, please re-run `uv pip install`.
 
 ### Demo
 

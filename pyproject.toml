@@ -7,16 +7,12 @@ requires = [
 ]
 build-backend = "scikit_build_core.build"
 
-# This section provides general project metadata that is used across
-# a variety of build tools. Notably, the version specified here is the
-# single source of truth for volumembo's version
 [project]
 name = "volumembo"
 version = "0.1.0"
 description = "Efficient Volume-Preserving MBO Scheme for Data Clustering"
 license = "Apache-2.0"
 license-files = ["LICENSE.md"]
-readme = "README.md"
 authors = [{ name = "Fabius Krämer", email = "f.kraemer@math.uni-heidelberg.de" }, { name = "Thomas Isensee", email = "thomas.isensee@iwr.uni-heidelberg.de" }]
 requires-python = ">=3.10"
 dependencies = ["graphlearning", "matplotlib", "numpy", "scipy", "scikit-learn"]
@@ -33,10 +29,15 @@ classifiers = [
     "Intended Audience :: Science/Research",
 ]
 
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
+
 [project.urls]
 repository = "https://github.com/fabiuskt/VolumeMBO_OS"
 
 [project.optional-dependencies]
+dev = ["mypy"]
 test = ["pytest"]
 
 [tool.scikit-build]
@@ -45,7 +46,39 @@ cmake.version = "CMakeLists.txt"
 ninja.version = ">=1.11"
 
 [tool.scikit-build.cmake.define]
-BUILD_TESTS = "ON"
+BUILD_TESTS = "OFF"
 
 [tool.pre-commit]
 hook-types = ["pre-commit"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+disallow_untyped_defs = false
+strict = false
+
+[tool.ruff]
+src = ["src", "tests/python"]
+extend-exclude = ["src/volumembo/legacy", "*.ipynb"]
+line-length = 88
+indent-width = 4
+target-version = "py313"
+
+[tool.ruff.lint]
+select = [
+    "B",  # flake8-bugbear - common mistakes
+    "C4", # flake8-comprehensions - cleaner comprehensions
+    "E",  # style errors
+    "F",  # logical errors
+    "I",  # import sorting
+    "UP", # pyupgrade - modernize syntax
+]
+ignore = ["E501", "B007"] # Ignore line-length for docstrings/comments
+
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"

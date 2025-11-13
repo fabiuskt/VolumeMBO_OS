@@ -7,11 +7,17 @@ repos:
       - id: nbstripout
         files: ".ipynb"
 
-  # Run Black - the uncompromising Python code formatter
-  - repo: https://github.com/psf/black
-    rev: 25.1.0
+  # Run Ruff - a fast Python linter and formatter
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.4
     hooks:
-      - id: black-jupyter
+      # Run the linter.
+      - id: ruff-check
+        types_or: [ python, pyi ]
+        args: [--fix]
+      # Run the formatter.
+      - id: ruff-format
+        types_or: [ python, pyi ]
 
   # Format C++ code with Clang-Format - automatically applying the changes
   - repo: https://github.com/ssciwr/clang-format-precommit

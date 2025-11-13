@@ -1,7 +1,8 @@
-import numpy as np
 import time
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator
+
+import numpy as np
 
 
 class TimingManager:
@@ -30,8 +31,9 @@ class TimingManager:
     def time(self, name: str) -> Iterator[None]:
         """
         Context manager to time a block of code.
-        This method can be used to measure the time taken by a specific operation
-        or block of code. It records the elapsed time and stores it under the given name.
+        This method can be used to measure the time taken by a specific
+        operation or block of code. It records the elapsed time and stores
+        it under the given name.
         Args:
             name (str): The name of the operation to be timed.
         """
@@ -59,14 +61,14 @@ class TimingManager:
         else:
             self.timings.pop(key, None)
 
-    def summary(self) -> dict[str, dict[str, float | int]]:
+    def summary(self) -> dict[str, dict[str, np.floating | int]]:
         """
         Summarize the recorded timings.
-        This method computes the mean, standard deviation, and count of the recorded timings
-        for each operation.
+        This method computes the mean, standard deviation, and count of the
+        recorded timings for each operation.
         Returns:
-            dict: A dictionary where keys are operation names and values are dictionaries
-                  containing 'mean', 'std', and 'count' of the timings.
+            dict: A dictionary where keys are operation names and values are
+            dictionaries containing 'mean', 'std', and 'count' of the timings.
         """
         return {
             k: {"mean": np.mean(v), "std": np.std(v), "count": len(v)}
