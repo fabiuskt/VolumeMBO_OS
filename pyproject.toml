@@ -7,9 +7,6 @@ requires = [
 ]
 build-backend = "scikit_build_core.build"
 
-# This section provides general project metadata that is used across
-# a variety of build tools. Notably, the version specified here is the
-# single source of truth for volumembo's version
 [project]
 name = "volumembo"
 version = "0.1.0"
@@ -40,6 +37,7 @@ content-type = "text/markdown"
 repository = "https://github.com/fabiuskt/VolumeMBO_OS"
 
 [project.optional-dependencies]
+dev = ["mypy"]
 test = ["pytest"]
 
 [tool.scikit-build]
@@ -52,6 +50,14 @@ BUILD_TESTS = "OFF"
 
 [tool.pre-commit]
 hook-types = ["pre-commit"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+disallow_untyped_defs = false
+strict = false
 
 [tool.ruff]
 src = ["src", "tests/python"]

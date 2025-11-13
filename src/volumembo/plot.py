@@ -22,6 +22,7 @@ Features:
 from collections.abc import Sequence
 
 import matplotlib as mpl
+import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.axes import Axes
 
@@ -42,7 +43,7 @@ class SimplexPlotter:
 
     def __init__(self, ax: Axes) -> None:
         # Use provided axes or fall back to current
-        self.ax = ax or mpl.pyplot.gca()
+        self.ax = ax or plt.gca()
 
         # Cartesian coordinates for the simplex vertices (equilateral triangle)
         self.A = np.array([0.0, 0.0])
@@ -325,7 +326,9 @@ class SimplexPlotter:
             self.color2 = color2
 
     @staticmethod
-    def _project_to_segment(point: np.ndarray, a: np.ndarray, b: np.ndarray) -> float:
+    def _project_to_segment(
+        point: np.ndarray, a: np.ndarray, b: np.ndarray
+    ) -> np.ndarray:
         """Project point p onto segment a-b, return foot of perpendicular.
         Args:
             point (np.ndarray): Point to project, shape (2,).

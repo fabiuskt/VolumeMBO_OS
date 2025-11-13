@@ -1,4 +1,5 @@
 import os
+from collections.abc import Callable
 from datetime import datetime
 
 import graphlearning as gl
@@ -69,39 +70,40 @@ class MBO:
         """
         self.A_3: sp.sparse.spmatrix | None = None
         self.A_minus_eig: sp.sparse.spmatrix | None = None
-        self.data: np.ndarray | None = None
+        self._data: np.ndarray | None = None
         self.diffusion_method: str | None = None
         self.eigenvalues: np.ndarray | None = None
-        self.eigenvectors: np.ndarray | None = None
+        self._eigenvectors: np.ndarray | None = None
         self.fidelity_set: np.ndarray | None = None
         self.initial_cluster: np.ndarray | None = None
-        self.labels: np.ndarray | None = None
+        self._labels: np.ndarray | None = None
         self.lower_limit: np.ndarray | None = None
-        self.number_of_known_labels: int | None = None
-        self.number_of_labels: int | None = None
-        self.number_of_neighbors: int | None = None
-        self.number_of_points: int | None = None
+        self._number_of_known_labels: int | None = None
+        self._number_of_labels: int | None = None
+        self._number_of_neighbors: int | None = None
+        self._number_of_points: int | None = None
         self.temperature: float | None = None
+        self.threshold_function: Callable[[np.ndarray], np.ndarray] | None = None
         self.upper_limit: np.ndarray | None = None
         self.volume: np.ndarray | None = None
         self.W2: sp.sparse.spmatrix | None = None
         self.W_W2: sp.sparse.spmatrix | None = None
-        self.weight_matrix: sp.sparse.spmatrix | None = None
+        self._weight_matrix: sp.sparse.spmatrix | None = None
 
         if labels is None:
             raise ValueError("Labels must be provided.")
         else:
-            self.labels = labels
-            self.number_of_labels = len(np.unique(labels))
+            self._labels = labels
+            self._number_of_labels = len(np.unique(labels))
 
         if weight_matrix is not None and labels is not None:
-            self.number_of_points = weight_matrix.shape[0]
-            self.weight_matrix = weight_matrix
+            self._number_of_points = weight_matrix.shape[0]
+            self._weight_matrix = weight_matrix
         elif data is not None:
-            self.data = data
-            self.number_of_points = data.shape[0]
-            self.number_of_neighbors = number_of_neighbors
-            self.weight_matrix = gl.weightmatrix.knn(
+            self._data = data
+            self._number_of_points = data.shape[0]
+            self._number_of_neighbors = number_of_neighbors
+            self._weight_matrix = gl.weightmatrix.knn(
                 data,
                 number_of_neighbors,
                 metric="euclidean",
@@ -133,10 +135,10 @@ class MBO:
 
         if labels is not None:
             # Infer number of labels from dataset
-            self.number_of_points = len(labels)
+            self._number_of_points = len(labels)
         else:
             # Get number of labels from input or default
-            self.number_of_known_labels = config["number_of_known_labels"]
+            self._number_of_known_labels = config["number_of_known_labels"]
 
         # Compute volume of each label
         if labels is not None:
@@ -157,7 +159,7 @@ class MBO:
         else:
             self.upper_limit = self.volume
 
-        self.number_of_known_labels = config["number_of_known_labels"]
+        self._number_of_known_labels = config["number_of_known_labels"]
 
         # Timer for performance measurement
         self.timer = TimingManager(enable=True)
@@ -204,22 +206,22 @@ class MBO:
 
     def print_parameters(self) -> None:
         """Print the parameters of the VolumeMBO instance."""
-        if self.number_of_points is not None:
+        if self._number_of_points is not None:
             print(f"Number of points: {self.number_of_points}")
-        if self.number_of_labels is not None:
+        if self._number_of_labels is not None:
             print(f"Number of labels: {self.number_of_labels}")
-        if self.number_of_neighbors is not None:
+        if self._number_of_neighbors is not None:
             print(f"Number of neighbors: {self.number_of_neighbors}")
         print(f"Diffusion time: {self.diffusion_time}")
         if self.temperature is not None:
             print(f"Temperature: {self.temperature}")
         print(f"Number of known labels per class: {self.number_of_known_labels}")
 
-        if self.data is not None:
+        if self._data is not None:
             print(f"\nDataset shape: {self.data.shape}")
-        if self.labels is not None:
+        if self._labels is not None:
             print(f"Labels shape: {self.labels.shape}")
-        if self.weight_matrix is not None:
+        if self._weight_matrix is not None:
             print(f"Weight matrix shape: {self.weight_matrix.shape}")
         if self.volume is not None:
             print(f"Volume: {self.volume}")
@@ -238,7 +240,7 @@ class MBO:
             print(f"W_W2 shape: {self.W_W2.shape}")
         if self.A_minus_eig is not None:
             print(f"A_minus_eig shape: {self.A_minus_eig.shape}")
-        if self.eigenvectors is not None:
+        if self._eigenvectors is not None:
             print(f"Eigenvectors shape: {self.eigenvectors.shape}")
         if self.eigenvalues is not None:
             print(f"Eigenvalues shape: {self.eigenvalues.shape}")
@@ -273,7 +275,6 @@ class MBO:
         energy = np.inf
 
         # Run the MBO iteration loop
-        count = 0
         for count in range(max_iterations):
             if not self.temperature and relative_energy_change < tolerance:
                 break
@@ -576,6 +577,54 @@ class MBO:
         if self.threshold_function is None:
             raise ValueError(f"Unknown threshold method: {method}")
 
+    @property
+    def data(self) -> np.ndarray:
+        if self._data is None:
+            raise ValueError("data not set.")
+        return self._data
+
+    @property
+    def eigenvectors(self) -> np.ndarray:
+        if self._eigenvectors is None:
+            raise ValueError("eigenvectors not set.")
+        return self._eigenvectors
+
+    @property
+    def labels(self) -> np.ndarray:
+        if self._labels is None:
+            raise ValueError("labels not set.")
+        return self._labels
+
+    @property
+    def number_of_known_labels(self) -> int:
+        if self._number_of_known_labels is None:
+            raise ValueError("number_of_known_labels not set.")
+        return self._number_of_known_labels
+
+    @property
+    def number_of_labels(self) -> int:
+        if self._number_of_labels is None:
+            raise ValueError("number_of_labels not set.")
+        return self._number_of_labels
+
+    @property
+    def number_of_neighbors(self) -> int:
+        if self._number_of_neighbors is None:
+            raise ValueError("number_of_neighbors not set.")
+        return self._number_of_neighbors
+
+    @property
+    def number_of_points(self) -> int:
+        if self._number_of_points is None:
+            raise ValueError("number_of_points not set.")
+        return self._number_of_points
+
+    @property
+    def weight_matrix(self) -> sp.sparse.spmatrix:
+        if self._weight_matrix is None:
+            raise ValueError("weight_matrix not set.")
+        return self._weight_matrix
+
     @staticmethod
     def _diffused_to_onehot(u: np.ndarray) -> np.ndarray:
         """
@@ -636,16 +685,11 @@ class MBO:
 
         # Diffusion candidate:spectral decomposition exponential matrix
         # First K eigenvalues and eigenvectors of Graph Laplace
-        # K = int(0.5 * np.log(self.number_of_points))
         K = min(50, self.number_of_points - 2)
         print(f"Computing eigenvalues and eigenvectors for K = {K}")
         vals, vec = sp.sparse.linalg.eigs(W_normalized, k=K)
-        self.eigenvectors, _ = np.linalg.qr(vec.real)  # Orthonormalize
-        self.eigenvalues = 1 - vals.real
-        # print("Eigenvalues:", self.eigenvalues)
-        # print("Vec.T @ Vec ≈ Identity?", np.allclose(self.eigenvectors.T @ self.eigenvectors, np.eye(K), atol=1e-1))
-        # print("error:", np.linalg.norm(self.eigenvectors.T @ self.eigenvectors - np.eye(K)))
-        # print("exp(-t * λ):", np.exp(-self.diffusion_time * self.eigenvalues))
+        self._eigenvectors, _ = np.linalg.qr(vec.real)  # Orthonormalize
+        self._eigenvalues = 1 - vals.real
 
     def _labels_to_onehot(self, labels: np.ndarray) -> np.ndarray:
         """

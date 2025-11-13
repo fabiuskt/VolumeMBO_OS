@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.typing as npt
 import scipy as sp
 
 
@@ -9,7 +10,7 @@ def direction_to_grow(cluster_idx: int, number_of_labels: int) -> np.ndarray:
     return direction
 
 
-def onehot_to_labels(onehot: np.ndarray) -> np.ndarray:
+def onehot_to_labels(onehot: npt.NDArray[np.floating]) -> npt.NDArray[np.intp]:
     """
     Convert one-hot encoding to integer labels.
 
@@ -52,10 +53,10 @@ def bellman_ford_voronoi_initialization(
 
     done = False
     while not done:
-        done = 1
+        done = True
         for i in range(N):
             if active[i]:
-                done = 0
+                done = False
                 for j in range(W.indptr[i], W.indptr[i + 1]):
                     index = W.indices[j]
                     if W.data[j] != 0:

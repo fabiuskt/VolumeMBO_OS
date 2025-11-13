@@ -61,7 +61,7 @@ class TimingManager:
         else:
             self.timings.pop(key, None)
 
-    def summary(self) -> dict[str, dict[str, float | int]]:
+    def summary(self) -> dict[str, dict[str, np.floating | int]]:
         """
         Summarize the recorded timings.
         This method computes the mean, standard deviation, and count of the
