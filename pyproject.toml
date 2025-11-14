@@ -46,6 +46,7 @@ cmake.version = "CMakeLists.txt"
 ninja.version = ">=1.11"
 
 [tool.scikit-build.cmake.define]
+BUILD_DOCS = "OFF"
 BUILD_TESTS = "OFF"
 
 [tool.pre-commit]

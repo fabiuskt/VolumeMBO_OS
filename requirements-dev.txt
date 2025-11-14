@@ -1,4 +1,6 @@
+breathe
 cmake
+exhale
 ninja
 numpy
 pre-commit
@@ -7,3 +9,6 @@ pytest
 pytest-cov
 scikit-build-core
 setuptools
+sphinx
+sphinx-autodoc-typehints
+sphinx-rtd-theme
