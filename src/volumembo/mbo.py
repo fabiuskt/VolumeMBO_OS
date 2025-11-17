@@ -176,12 +176,23 @@ class MBO:
     def get_initial_cluster(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Get the initial clustering based on the specified method.
-        Returns:
-            tuple: Initial clustering (chi), labels, and fidelity set.
-            If initial_cluster and fidelity_set are provided, they are returned directly.
-            Otherwise, a new fidelity set is generated and the initial clustering is computed.
-        """
 
+        Returns
+        -------
+        tuple of np.ndarray
+            chi : np.ndarray
+                Initial clustering matrix.
+            labels : np.ndarray
+                Derived labels from chi.
+            fidelity_set : np.ndarray
+                Fidelity set used for initialization.
+
+        Notes
+        -----
+        If ``initial_cluster`` and ``fidelity_set`` are provided, they are returned
+        directly. Otherwise, a new fidelity set is generated and the initial
+        clustering is computed.
+        """
         # Initialize the clustering
         if self.initial_cluster is not None and self.fidelity_set is not None:
             return (
@@ -387,15 +398,23 @@ class MBO:
             print(f"Saved results to {result_file}")
 
     def set_diffusion_method(self, method: str) -> None:
-        """Prepares a diffusion function to apply to a given chi.
-        Args:
-            method (str): Method for diffusion, can be one of:
-                - "spectral": spectral decomposition
-                - "expm_multiply": exponential matrix multiplication
-                - "A_3": taylor expansion of the exponential matrix
-                - "W2": normalized weight matrix squared
-                - "W_W2": fourth power of the weight matrix
-                - "A_minus_eig": squared weight matrix minus fraction of identity
+        """
+        Prepare the diffusion function to apply to a given chi.
+
+        Parameters
+        ----------
+        method : str
+            The diffusion method to use. Valid options are:
+            - ``"spectral"`` — Spectral decomposition.
+            - ``"expm_multiply"`` — Exponential matrix multiplication.
+            - ``"A_3"`` — Third-order Taylor expansion of the exponential.
+            - ``"W2"`` — Normalized weight matrix squared.
+            - ``"W_W2"`` — Fourth power of the weight matrix.
+            - ``"A_minus_eig"`` — Squared weight matrix minus fraction of identity.
+
+        Returns
+        -------
+        None
         """
         self.diffusion_method = method
 
@@ -438,15 +457,22 @@ class MBO:
 
     def set_clustering_initialization_function(self, method: str) -> None:
         """
-        Returns a clustering initialization function based on the specified method.
-        Args:
-            method (str): Method for clustering initialization, can be one of:
-                - "bellman_ford": Bellman-Ford initialization
-                - "random": Random initialization
-                - "voronoi": Voronoi initialization
-                - "laguerre": Laguerre initialization
-                - "diffusion": Diffusion-based initialization
-                - "diffusion_volume": Diffusion-based initialization with volume constraints
+        Set the clustering initialization function based on the specified method.
+
+        Parameters
+        ----------
+        method : str
+            The initialization method to use. Valid options are:
+            - ``"bellman_ford"`` — Bellman–Ford initialization.
+            - ``"random"`` — Random initialization.
+            - ``"voronoi"`` — Voronoi initialization.
+            - ``"laguerre"`` — Laguerre initialization.
+            - ``"diffusion"`` — Diffusion-based initialization.
+            - ``"diffusion_volume"`` — Diffusion with volume constraints.
+
+        Returns
+        -------
+        None
         """
         if method == "bellman_ford":
 

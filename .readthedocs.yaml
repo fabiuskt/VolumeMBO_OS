@@ -1,0 +1,21 @@
+# .readthedocs.yaml
+# Read the Docs configuration file: https://docs.readthedocs.io/en/stable/config-file/v2.html
+
+version: 2
+
+# Build documentation in the "docs/" directory with Sphinx
+sphinx:
+  configuration: doc/conf.py
+
+# Build environment
+build:
+  os: ubuntu-24.04
+  tools:
+    python: "3.12"
+  apt_packages:
+    - doxygen    # Required for Exhale/Doxygen integration
+
+# Install your docs dependencies
+python:
+  install:
+    - requirements: requirements-dev.txt

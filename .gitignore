@@ -28,3 +28,11 @@ jupyter/results/
 
 # VSCode Configuration
 .vscode/
+
+# Sphinx build artifacts
+doc/_build/
+doc/_doxygen/
+doc/cppapi/
+doc/html/
+doc/latex/
+doc/xml/
