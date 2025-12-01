@@ -22,7 +22,7 @@ jobs:
         python-version: ["3.10", "3.14"]
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         submodules: 'recursive'
 
@@ -55,7 +55,7 @@ jobs:
       ASAN_OPTIONS: "detect_stack_use_after_return=1:check_initialization_order=1:strict_init_order=1"
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         submodules: 'recursive'
 
