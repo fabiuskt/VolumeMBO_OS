@@ -41,6 +41,7 @@ dev = ["mypy"]
 test = ["pytest"]
 
 [tool.scikit-build]
+build.verbose = true
 minimum-version = "build-system.requires"
 cmake.version = "CMakeLists.txt"
 ninja.version = ">=1.11"
