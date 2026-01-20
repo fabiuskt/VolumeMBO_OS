@@ -37,7 +37,7 @@ jobs:
 
     - name: Install Python package
       run: |
-        python -m pip install --no-build-isolation --config-settings=build-dir="build" --config-settings=cmake.build-type="Debug" --config-settings=cmake.define.BUILD_TESTS="ON" --config-settings=build.verbose=0 -v .
+        python -m pip install --no-build-isolation --config-settings=build-dir="build" --config-settings=cmake.build-type="Debug" --config-settings=cmake.define.BUILD_TESTING="ON" --config-settings=build.verbose=0 -v .
 
     - name: Run C++ tests
       shell: bash
@@ -70,7 +70,7 @@ jobs:
 
     - name: Install Python package
       run: |
-        python -m pip install --no-build-isolation --config-settings=build-dir="build" --config-settings=cmake.build-type="Debug" --config-settings=cmake.define.BUILD_TESTS="ON" --config-settings=cmake.define.CMAKE_CXX_FLAGS="-fsanitize=address -fsanitize-address-use-after-scope -fno-omit-frame-pointer" --config-settings=cmake.define.CMAKE_EXE_LINKER_FLAGS="-fsanitize=address -fsanitize-address-use-after-scope -fno-omit-frame-pointer" -v -e .
+        python -m pip install --no-build-isolation --config-settings=build-dir="build" --config-settings=cmake.build-type="Debug" --config-settings=cmake.define.BUILD_TESTING="ON" --config-settings=cmake.define.CMAKE_CXX_FLAGS="-fsanitize=address -fsanitize-address-use-after-scope -fno-omit-frame-pointer" --config-settings=cmake.define.CMAKE_EXE_LINKER_FLAGS="-fsanitize=address -fsanitize-address-use-after-scope -fno-omit-frame-pointer" -v -e .
 
     - name: Run C++ tests
       shell: bash

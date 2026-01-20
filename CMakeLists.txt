@@ -18,6 +18,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # Compilation options
 # -------------------
 option(BUILD_PYTHON "Enable building of Python bindings" ON)
+option(BUILD_DOCS "Enable building of documentation" OFF)
 
 # ---------------------------
 # Add the main library target
@@ -48,10 +49,19 @@ target_sources(volumembo
 # Specify C++20 standard for the core library
 target_compile_features(volumembo PUBLIC cxx_std_20)
 
+# ----------------------
 # Optionally build tests
+# ----------------------
 include(CTest)
-if(BUILD_TESTS)
+if(BUILD_TESTING)
   add_subdirectory(tests)
+endif()
+
+# ---------------------
+# Optionally build docs
+# ---------------------
+if(BUILD_DOCS)
+  add_subdirectory(doc)
 endif()
 
 # ------------------------------

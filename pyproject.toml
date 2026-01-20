@@ -48,7 +48,7 @@ ninja.version = ">=1.11"
 
 [tool.scikit-build.cmake.define]
 BUILD_DOCS = "OFF"
-BUILD_TESTS = "OFF"
+BUILD_TESTING = "OFF"
 
 [tool.pre-commit]
 hook-types = ["pre-commit"]
