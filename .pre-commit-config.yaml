@@ -45,14 +45,3 @@ repos:
       - id: check-toml
       # Unify file endings
       - id: end-of-file-fixer
-
-  # CMake Formatting/Linting Utility
-  - repo: https://github.com/cheshirekow/cmake-format-precommit
-    rev: v0.6.13
-    hooks:
-      - id: cmake-format
-      - id: cmake-lint
-        args:
-          # We *need* to set a variable with mixed casing - relax the linter to allow that.
-          - --public-var-pattern
-          - "[a-zA-Z][a-zA-Z0-9_]+"

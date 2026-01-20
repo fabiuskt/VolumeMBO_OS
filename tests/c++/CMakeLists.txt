@@ -22,11 +22,19 @@ include(Catch)
 add_executable(tests)
 
 # Add all test source files to the 'tests' executable
-target_sources(tests PRIVATE priority_queue_t.cpp median_fitter_t.cpp)
+target_sources(tests
+  PRIVATE
+    priority_queue_t.cpp
+    median_fitter_t.cpp
+)
 
 # Link the test binary against: - the main library under test - the test helper
 # library ( - the Catch2 main entry point (Catch2::Catch2WithMain)
-target_link_libraries(tests PUBLIC volumembo Catch2::Catch2WithMain)
+target_link_libraries(tests
+  PUBLIC
+    volumembo
+    Catch2::Catch2WithMain
+)
 
 # Register the tests with CTest so that `ctest` or `make test` will run them.
 # This parses all TEST_CASE(...) macros in the 'tests' binary.

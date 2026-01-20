@@ -44,10 +44,17 @@ If you intend to contribute to the development of volumembo, we recommend a loca
 git clone --recurse-submodules https://github.com/fabiuskt/VolumeMBO_OS
 cd VolumeMBO_OS
 python -m uv pip install -r requirements-dev.txt
-python -m uv pip install --no-build-isolation --config-settings=build-dir="build" --config-settings=cmake.define.BUILD_TESTS="ON" -v -e .
+python -m uv pip install --no-build-isolation --config-settings=build-dir="build" --config-settings=cmake.define.BUILD_TESTING="ON" -v -e .
 ```
 
 This clones the repository including all submodules, installs the `volumembo` package, exposes the CMake build directory as `build`, and builds tests. The `-e` (editable) flag allows the change of Python sources of `volumembo` without reinstalling the package. The `-v` flag enables verbose output which gives you detailed information about the compilation process that you should include into potential bug reports. To recompile the C++ source, please re-run `uv pip install`.
+
+The API documentation can be built with
+```
+python -m uv pip install --no-build-isolation --config-settings=build-dir="build" --config-settings=cmake.define.BUILD_DOCS="ON" -v -e .
+cmake --build build --target sphinx-doc
+```
+and can then be found in ```build/doc/sphinx/index.html```.
 
 ### Demo
 
